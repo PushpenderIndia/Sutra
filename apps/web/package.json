@@ -10,6 +10,7 @@
     "typecheck": "next typegen && tsc"
   },
   "dependencies": {
+    "@sutra/config": "workspace:*",
     "@sutra/domain": "workspace:*",
     "next": "16.4.2",
     "react": "19.3.1",

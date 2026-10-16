@@ -89,12 +89,12 @@ export { encrypt, decrypt } from './crypto';           // AES-256-GCM with ENCRY
 All scripts iterate `Object.keys(serverSchema.shape)`, so adding a key in one place updates everything.
 
 ## Tasks
-- [ ] Zod schemas + `parse()` with aggregated errors
-- [ ] `encrypt/decrypt` (AES-256-GCM, versioned key prefix)
-- [ ] Load `/secrets/.env` when mounted, merged over `process.env`
-- [ ] Four scripts above
-- [ ] Biome `noProcessEnv` override confirmed
-- [ ] `docs/secrets.md`: how to add a secret (edit schema → `secrets:push` → done)
+- [x] Zod schemas + `parse()` with aggregated errors
+- [x] `encrypt/decrypt` (AES-256-GCM, versioned key prefix)
+- [x] Load `/secrets/.env` when mounted, merged over `process.env`
+- [x] Four scripts above
+- [x] Biome `noProcessEnv` override confirmed
+- [x] `docs/secrets.md`: how to add a secret (edit schema → `secrets:push` → done)
 
 ## Acceptance criteria
 - With a missing `MONGODB_URI`, the app fails at boot with a message listing every missing or invalid key

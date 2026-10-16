@@ -9,7 +9,9 @@ Sutra is an AI outbound-sales workspace. Paste your website and Sutra learns you
 Requires Node 22 and pnpm 10.
 
 ```sh
-pnpm i && pnpm dev   # http://localhost:3000
+pnpm i
+pnpm secrets:pull            # or: cp .env.example .env.local
+pnpm dev                     # http://localhost:3000
 ```
 
 ## Scripts
@@ -21,6 +23,7 @@ pnpm i && pnpm dev   # http://localhost:3000
 | `pnpm lint` / `pnpm format` | Biome check / fix |
 | `pnpm typecheck` | TypeScript across every workspace |
 | `pnpm test` | Vitest across every workspace |
+| `pnpm secrets:pull` / `push` / `check` / `example` | Manage the `SUTRA_ENV` secret ([docs/secrets.md](docs/secrets.md)) |
 
 ## Layout
 

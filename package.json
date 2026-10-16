@@ -12,7 +12,11 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "typecheck": "turbo typecheck",
-    "test": "vitest run"
+    "test": "vitest run",
+    "secrets:example": "pnpm --filter @sutra/config secrets example",
+    "secrets:pull": "pnpm --filter @sutra/config secrets pull",
+    "secrets:push": "pnpm --filter @sutra/config secrets push",
+    "secrets:check": "pnpm --filter @sutra/config secrets check"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

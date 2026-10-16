@@ -1,10 +1,12 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "stream",
+  "globalDependencies": [".env.local"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "env": ["NEXT_PUBLIC_*"]
     },
     "dev": {
       "cache": false,

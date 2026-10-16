@@ -26,6 +26,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@sutra/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@sutra/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -56,7 +59,14 @@ importers:
 
   packages/compliance: {}
 
-  packages/config: {}
+  packages/config:
+    dependencies:
+      server-only:
+        specifier: 0.0.1
+        version: 0.0.1
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
 
   packages/db: {}
 
@@ -1028,6 +1038,9 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  server-only@0.0.1:
+    resolution: {integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==}
+
   sharp@0.35.5:
     resolution: {integrity: sha512-Ywn4OnzGukp7CDMrp08RQ50YKmuwG47brZgIVPTvBaaAfQlRlygrRqSrxdCiL9M+LlzLBiJ68IR1QqvzHyjC7g==}
     engines: {node: '>=20.9.0'}
@@ -1179,6 +1192,9 @@ packages:
     resolution: {integrity: sha512-Tb2FUhB4vUsGQlfSquQLYkApkuPAFQXGFzxWKHHumVz2dK+X1RUm/HnID4+TfIGYJ1kTcwOaCk/buYCEJr6YjQ==}
     engines: {node: '>=20.11'}
     hasBin: true
+
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
 
 snapshots:
 
@@ -1829,6 +1845,8 @@ snapshots:
   semver@7.8.5:
     optional: true
 
+  server-only@0.0.1: {}
+
   sharp@0.35.5(@types/node@22.20.5):
     dependencies:
       '@img/colour': 1.1.0
@@ -1955,3 +1973,5 @@ snapshots:
       - msw
 
   why-is-node-running@3.2.1: {}
+
+  zod@4.6.7: {}
