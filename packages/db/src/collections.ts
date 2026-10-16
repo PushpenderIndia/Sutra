@@ -16,6 +16,7 @@ import {
   mailbox,
   meeting,
   message,
+  personalization,
   pipelineNode,
   pipelineRun,
   placesUsage,
@@ -34,6 +35,7 @@ export const Contacts = repository('contacts', contact);
 export const Campaigns = repository('campaigns', campaign);
 export const Enrollments = repository('enrollments', enrollment);
 export const Messages = repository('messages', message);
+export const Personalizations = repository('personalizations', personalization);
 export const TrackingEvents = repository('tracking_events', trackingEvent);
 export const Replies = repository('replies', reply);
 export const Meetings = repository('meetings', meeting);
@@ -61,6 +63,7 @@ export const repositories = [
   Campaigns,
   Enrollments,
   Messages,
+  Personalizations,
   TrackingEvents,
   Replies,
   Meetings,

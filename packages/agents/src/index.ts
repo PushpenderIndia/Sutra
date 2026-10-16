@@ -10,6 +10,34 @@ export {
 } from './agent.ts';
 export * from './agents/index.ts';
 export {
+  type CopywriterDeps,
+  copywriterDeps,
+  setCopywriterDeps,
+} from './copywriter/deps.ts';
+export {
+  personalizationFixture,
+  sequencePlanFixture,
+  translationFixtures,
+  variantPairFixtures,
+} from './copywriter/fixtures.ts';
+export {
+  type PersonalizeInput,
+  personalizeForContact,
+  researchUrls,
+} from './copywriter/personalize.ts';
+export {
+  checkGrounding,
+  type GateResult,
+  linksIn as variantLinksIn,
+  MAX_LINKS as VARIANT_MAX_LINKS,
+  MAX_SUBJECT,
+  MAX_WORDS,
+  qualityGate,
+  SPAM_WORDS,
+  wordCount,
+} from './copywriter/quality-gate.ts';
+export { MAX_TRANSLATION_LOCALES, regenerateStep, runCopywriter } from './copywriter/run.ts';
+export {
   type EnricherDeps,
   enricherDeps,
   setEnricherDeps,

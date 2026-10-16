@@ -313,7 +313,27 @@
       "breakup": "अंतिम संदेश"
     },
     "delay": "{days, plural, one {# दिन बाद} other {# दिन बाद}}",
-    "immediately": "पहले भेजा जाता है"
+    "immediately": "पहले भेजा जाता है",
+    "dimensions": {
+      "subject": "विषय",
+      "hook": "शुरुआत",
+      "cta": "कार्यवाही",
+      "length": "लंबाई",
+      "tone": "लहजा"
+    },
+    "flagged": "{count, plural, one {# समस्या} other {# समस्याएँ}}",
+    "edit": "संपादित करें",
+    "save": "सहेजें",
+    "saving": "सहेजा जा रहा है…",
+    "cancel": "रद्द करें",
+    "preview": "किसी संपर्क के लिए पूर्वावलोकन",
+    "previewFor": "पूर्वावलोकन: {name}",
+    "personalizationSource": "उद्धृत स्रोत देखें",
+    "noTranslation": "अभी अनुवाद नहीं हुआ",
+    "mergeHint": "मर्ज फ़ील्ड firstName, company, personalization और senderName भेजते समय प्रत्येक संपर्क के लिए भरे जाते हैं।",
+    "regenerate": "पुनः बनाएँ",
+    "regenerateNote": "वैकल्पिक टिप्पणी, जैसे अधिक अनौपचारिक, या ROI से शुरू करें",
+    "regenerating": "पुनः बनाया जा रहा है…"
   },
   "leads": {
     "title": "लीड्स",

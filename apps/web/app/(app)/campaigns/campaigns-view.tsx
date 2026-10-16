@@ -1,88 +1,30 @@
 'use client';
-import { Eye, Megaphone, MousePointerClick, Reply, Send, Sparkles } from 'lucide-react';
+import type { Locale } from '@sutra/domain';
+import { Eye, Megaphone, MousePointerClick, RefreshCw, Reply, Send } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useState, useTransition } from 'react';
+import { toast } from 'sonner';
+import { regenerateVariants } from '@/actions/campaigns';
 import { Checkpoint } from '@/components/checkpoint';
-import { columns, DataTable } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { StatCards } from '@/components/stat-cards';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { VariantCard } from '@/components/variant-card';
 import type { CampaignView } from '@/lib/data/campaigns';
 import { percent } from '@/lib/format';
 
-type VariantRow = CampaignView['steps'][number]['variants'][number];
-const col = columns<VariantRow>();
-const sum = (vs: VariantRow[], k: keyof VariantRow['stats']) =>
-  vs.reduce((n, v) => n + v.stats[k], 0);
+type Step = CampaignView['steps'][number];
+
+const sum = (c: CampaignView, k: keyof Step['variants'][number]['stats']) =>
+  c.steps.reduce((n, s) => n + s.variants.reduce((m, v) => m + v.stats[k], 0), 0);
 
 export function CampaignsView({ campaigns }: { campaigns: CampaignView[] }) {
   const t = useTranslations('campaigns');
-  const cols = useMemo(
-    () =>
-      col.columns([
-        col.accessor('letter', {
-          header: t('variant'),
-          cell: ({ row }) => (
-            <span className="flex size-6 items-center justify-center rounded-md bg-secondary font-semibold">
-              {row.original.letter}
-            </span>
-          ),
-        }),
-        col.accessor('subject', {
-          header: t('subject'),
-          cell: ({ row }) => (
-            <span className="flex max-w-md flex-col gap-0.5">
-              <span className="font-medium">{row.original.subject}</span>
-              <span className="text-xs text-muted-foreground">
-                {row.original.origin === 'optimizer' && (
-                  <Sparkles
-                    aria-label={t('optimizer')}
-                    className="mr-1 inline size-3 text-saffron-ink"
-                  />
-                )}
-                {row.original.hypothesis}
-              </span>
-            </span>
-          ),
-        }),
-        col.accessor('status', {
-          header: t('status'),
-          cell: ({ row }) => <StatusBadge status={row.original.status} />,
-        }),
-        col.accessor((v) => v.stats.sent, {
-          id: 'sent',
-          header: t('sent'),
-          cell: (c) => <span className="tabular-nums">{c.getValue()}</span>,
-        }),
-        col.accessor((v) => v.stats.opens, {
-          id: 'opens',
-          header: t('opens'),
-          cell: (c) => <span className="tabular-nums text-muted-foreground">≈{c.getValue()}</span>,
-        }),
-        col.accessor((v) => v.stats.clicks, {
-          id: 'clicks',
-          header: t('clicks'),
-          cell: (c) => <span className="tabular-nums">{c.getValue()}</span>,
-        }),
-        col.accessor((v) => v.stats.replies, {
-          id: 'replies',
-          header: t('replies'),
-          cell: (c) => <span className="tabular-nums">{c.getValue()}</span>,
-        }),
-        col.accessor((v) => (v.stats.sent ? v.stats.replies / v.stats.sent : -1), {
-          id: 'rate',
-          header: t('replyRate'),
-          cell: ({ row }) => (
-            <span className="font-medium tabular-nums">
-              {percent(row.original.stats.replies, row.original.stats.sent)}
-            </span>
-          ),
-        }),
-      ]),
-    [t],
-  );
 
   if (!campaigns.length) {
     return (
@@ -99,7 +41,7 @@ export function CampaignsView({ campaigns }: { campaigns: CampaignView[] }) {
       {campaigns.map((c) => {
         const all = c.steps.flatMap((s) => s.variants);
         const pending = all.filter((v) => v.status === 'pending_approval').length;
-        const sent = sum(all, 'sent');
+        const sent = sum(c, 'sent');
         return (
           <section key={c.id} aria-labelledby={`c-${c.id}`} className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-2">
@@ -125,7 +67,7 @@ export function CampaignsView({ campaigns }: { campaigns: CampaignView[] }) {
                 {
                   key: 'opens',
                   label: t('opensApprox'),
-                  value: `≈${sum(all, 'opens')}`,
+                  value: `≈${sum(c, 'opens')}`,
                   icon: Eye,
                   tone: 'muted',
                   hint: t('opensHint'),
@@ -133,48 +75,119 @@ export function CampaignsView({ campaigns }: { campaigns: CampaignView[] }) {
                 {
                   key: 'clicks',
                   label: t('clicks'),
-                  value: sum(all, 'clicks'),
+                  value: sum(c, 'clicks'),
                   icon: MousePointerClick,
                   tone: 'info',
-                  hint: percent(sum(all, 'clicks'), sent),
+                  hint: percent(sum(c, 'clicks'), sent),
                 },
                 {
                   key: 'replies',
                   label: t('replies'),
-                  value: sum(all, 'replies'),
+                  value: sum(c, 'replies'),
                   icon: Reply,
                   tone: 'accent',
-                  hint: t('rate', { rate: percent(sum(all, 'replies'), sent) }),
+                  hint: t('rate', { rate: percent(sum(c, 'replies'), sent) }),
                 },
               ]}
             />
             <ol className="flex flex-col gap-4">
               {c.steps.map((s) => (
-                <li key={s.index} className="flex flex-col gap-2">
-                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                    <h3 className="font-medium">
-                      {t('step', { n: s.index + 1 })}
-                      {s.intent && (
-                        <span className="text-muted-foreground"> · {t(`intents.${s.intent}`)}</span>
-                      )}
-                    </h3>
-                    <span className="text-xs text-muted-foreground">
-                      {s.delayDays ? t('delay', { days: s.delayDays }) : t('immediately')}
-                      {s.angle && ` · ${s.angle}`}
-                    </span>
-                  </div>
-                  <DataTable
-                    label={t('step', { n: s.index + 1 })}
-                    columns={cols}
-                    data={s.variants}
-                    searchable={false}
-                  />
-                </li>
+                <StepBlock key={s.index} campaignId={c.id} step={s} locales={c.locales} />
               ))}
             </ol>
           </section>
         );
       })}
     </>
+  );
+}
+
+/** One step in the vertical timeline: its heading, the A | B variant cards, and regenerate. */
+function StepBlock({
+  campaignId,
+  step,
+  locales,
+}: {
+  campaignId: string;
+  step: Step;
+  locales: Locale[];
+}) {
+  const t = useTranslations('campaigns');
+  const router = useRouter();
+  const [note, setNote] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+
+  const regenerate = () => {
+    start(async () => {
+      const res = await regenerateVariants({
+        campaignId,
+        stepIndex: step.index,
+        note: note || undefined,
+      });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setNote(null);
+      router.refresh();
+    });
+  };
+
+  return (
+    <li className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <h3 className="font-medium">
+          {t('step', { n: step.index + 1 })}
+          {step.intent && (
+            <span className="text-muted-foreground"> · {t(`intents.${step.intent}`)}</span>
+          )}
+        </h3>
+        <span className="text-xs text-muted-foreground">
+          {step.delayDays ? t('delay', { days: step.delayDays }) : t('immediately')}
+          {step.angle && ` · ${step.angle}`}
+        </span>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="ml-auto h-7 px-2 text-xs"
+          onClick={() => setNote((n) => (n === null ? '' : null))}
+        >
+          <RefreshCw className="size-3.5" />
+          {t('regenerate')}
+        </Button>
+      </div>
+
+      {note !== null && (
+        <div className="flex flex-col gap-2 rounded-md border bg-muted/40 p-3">
+          <Textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder={t('regenerateNote')}
+            rows={2}
+          />
+          <div className="flex justify-end gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setNote(null)}>
+              {t('cancel')}
+            </Button>
+            <Button size="sm" disabled={pending} onClick={regenerate}>
+              {pending ? t('regenerating') : t('regenerate')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-3 md:grid-cols-2">
+        {step.variants.map((v) => (
+          <VariantCard
+            key={v.id}
+            campaignId={campaignId}
+            stepIndex={step.index}
+            variant={v}
+            locales={locales}
+            onChanged={() => router.refresh()}
+          />
+        ))}
+      </div>
+    </li>
   );
 }

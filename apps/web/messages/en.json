@@ -313,7 +313,27 @@
       "breakup": "Break-up"
     },
     "delay": "{days, plural, one {after # day} other {after # days}}",
-    "immediately": "Sent first"
+    "immediately": "Sent first",
+    "dimensions": {
+      "subject": "Subject",
+      "hook": "Hook",
+      "cta": "CTA",
+      "length": "Length",
+      "tone": "Tone"
+    },
+    "flagged": "{count, plural, one {# issue} other {# issues}}",
+    "edit": "Edit",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "preview": "Preview for a contact",
+    "previewFor": "Preview: {name}",
+    "personalizationSource": "View cited source",
+    "noTranslation": "Not translated yet",
+    "mergeHint": "Merge fields firstName, company, personalization and senderName are filled per contact at send time.",
+    "regenerate": "Regenerate",
+    "regenerateNote": "Optional note, e.g. more casual, or lead with the ROI",
+    "regenerating": "Regenerating…"
   },
   "leads": {
     "title": "Leads",

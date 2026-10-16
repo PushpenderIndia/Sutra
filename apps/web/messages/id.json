@@ -313,7 +313,27 @@
       "breakup": "Penutup"
     },
     "delay": "{days, plural, other {setelah # hari}}",
-    "immediately": "Dikirim pertama"
+    "immediately": "Dikirim pertama",
+    "dimensions": {
+      "subject": "Subjek",
+      "hook": "Pembuka",
+      "cta": "CTA",
+      "length": "Panjang",
+      "tone": "Nada"
+    },
+    "flagged": "{count, plural, one {# masalah} other {# masalah}}",
+    "edit": "Ubah",
+    "save": "Simpan",
+    "saving": "Menyimpan…",
+    "cancel": "Batal",
+    "preview": "Pratinjau untuk kontak",
+    "previewFor": "Pratinjau: {name}",
+    "personalizationSource": "Lihat sumber yang dikutip",
+    "noTranslation": "Belum diterjemahkan",
+    "mergeHint": "Merge field firstName, company, personalization, dan senderName diisi per kontak saat pengiriman.",
+    "regenerate": "Buat ulang",
+    "regenerateNote": "Catatan opsional, mis. lebih santai, atau mulai dari ROI",
+    "regenerating": "Membuat ulang…"
   },
   "leads": {
     "title": "Lead",

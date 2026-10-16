@@ -1,3 +1,4 @@
+import { runCopywriter } from './copywriter/run.ts';
 import { runEnricher } from './enricher/run.ts';
 import { definePipeline } from './pipeline/define.ts';
 import { runProfiler } from './profiler/run.ts';
@@ -19,7 +20,7 @@ export const mainPipeline = definePipeline(
   {
     orchestrator: {
       label: 'Orchestrator',
-      children: ['profiler', 'checkpoint1', 'prospector', 'enricher'],
+      children: ['profiler', 'checkpoint1', 'prospector', 'enricher', 'copywriter'],
     },
     profiler: {
       label: 'Business Profiler',
@@ -48,6 +49,15 @@ export const mainPipeline = definePipeline(
       // no LLM call; the rest get a blended score (0.6 LLM + 0.4 rules).
       children: ['contactFinder', 'researcher', 'scorer'],
       run: runEnricher,
+    },
+    copywriter: {
+      label: 'Copywriter',
+      after: ['enricher'],
+      // Per persona: plan the sequence → write two A/B variants per step → deterministic quality
+      // gate (one regeneration on failure) → translate each template into the contacts' locales,
+      // saving one draft campaign per persona for checkpoint 2.
+      children: ['sequencePlanner', 'variantWriter', 'qualityGate'],
+      run: runCopywriter,
     },
   },
   { name: 'main' },

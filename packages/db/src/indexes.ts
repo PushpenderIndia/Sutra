@@ -42,6 +42,10 @@ export const indexes: Record<CollectionName, IndexDescription[]> = {
     { key: { workspaceId: 1, campaignId: 1, variantId: 1, status: 1 } },
     { key: { threadId: 1 }, sparse: true },
   ],
+  personalizations: [
+    unique({ workspaceId: 1, contactId: 1, campaignId: 1, stepIndex: 1 }),
+    { key: { workspaceId: 1, campaignId: 1 } },
+  ],
   tracking_events: [
     { key: { workspaceId: 1, variantId: 1, kind: 1 } },
     { key: { messageId: 1, kind: 1 } },
