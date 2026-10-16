@@ -21,7 +21,7 @@ pnpm-workspace.yaml        # apps/*, packages/*
 turbo.json                 # build, dev, lint, typecheck, test pipelines
 tsconfig.base.json         # strict, noUncheckedIndexedAccess, verbatimModuleSyntax
 biome.json                 # recommended + noProcessEnv (except packages/config)
-vitest.workspace.ts
+vitest.config.ts   # Vitest projects
 .nvmrc                     # Node 22 LTS
 .gitignore  .editorconfig
 .github/workflows/ci.yml
@@ -43,11 +43,11 @@ packages/<name>/src/index.ts
 - Pin exact dependency versions (`save-exact=true` in `.npmrc`).
 
 ## Tasks
-- [ ] Init pnpm workspace, Turborepo, Biome, Vitest
-- [ ] `create-next-app` into `apps/web`; remove boilerplate; add `transpilePackages`
-- [ ] Scaffold the 7 packages with `index.ts` placeholders
-- [ ] CI: install with cache → lint → typecheck → test → build
-- [ ] Root `README.md` with a one-paragraph pitch + `pnpm i && pnpm dev`
+- [x] Init pnpm workspace, Turborepo, Biome, Vitest
+- [x] `create-next-app` into `apps/web`; remove boilerplate; add `transpilePackages`
+- [x] Scaffold the 7 packages with `index.ts` placeholders
+- [x] CI: install with cache → lint → typecheck → test → build
+- [x] Root `README.md` with a one-paragraph pitch + `pnpm i && pnpm dev`
 
 ## Acceptance criteria
 - `pnpm i && pnpm dev` serves the app at `localhost:3000`
