@@ -7,6 +7,8 @@ import {
   checkFor as dbCheckFor,
   Enrollments,
   Messages,
+  metricsFor,
+  variantMetrics,
   WorkspaceSettings,
 } from '@sutra/db';
 import type {
@@ -19,10 +21,11 @@ import type {
   WorkspaceSettings as Settings,
   StopReason,
 } from '@sutra/domain';
-import { enrollmentTransitions, fillMergeFields } from '@sutra/domain';
+import { enrollmentTransitions, fillMergeFields, rewardSuccesses } from '@sutra/domain';
 import { personalizeForContact } from '../copywriter/personalize.ts';
 import { defineJob, type JobPayload, enqueue as seamEnqueue } from '../jobs.ts';
-import { nextAction, pickVariant } from './engine.ts';
+import { OPTIMIZER_JOB, OPTIMIZER_SEND_INTERVAL } from '../optimizer/run.ts';
+import { nextAction, pickVariant, type VariantStatsLookup } from './engine.ts';
 import { scheduleStep, windowFor } from './schedule.ts';
 
 const CAMPAIGN: Actor = { kind: 'system', id: 'campaign' };
@@ -141,9 +144,18 @@ export async function runStep(payload: JobPayload, deps: RunStepDeps = {}): Prom
 
   const step = campaign.steps[action.stepIndex];
   const assignedId = enr.assignedVariants[String(action.stepIndex)];
-  const variant =
-    (assignedId && step?.variants.find((v) => v.id === assignedId)) ||
-    (step && pickVariant(step, random));
+  // Assign with the Thompson-sampling bandit, weighting arms by the campaign's reward metric. A
+  // step already assigned to this enrollment keeps its variant (a retried variant is still honoured
+  // for someone already enrolled on it; the retire only stops new assignments).
+  let variant = assignedId ? step?.variants.find((v) => v.id === assignedId) : undefined;
+  if (!variant && step) {
+    const metrics = await variantMetrics(workspaceId);
+    const lookup: VariantStatsLookup = (id) => {
+      const m = metricsFor(metrics, id);
+      return { sends: m.sent, successes: rewardSuccesses(m, campaign.reward) };
+    };
+    variant = pickVariant(step, lookup, random);
+  }
   if (!step || !variant) {
     await advance(workspaceId, enr, campaign, contact, settings, now, enqueue);
     return;
@@ -217,7 +229,31 @@ export async function runStep(payload: JobPayload, deps: RunStepDeps = {}): Prom
     data: { campaignId: campaign._id, stepIndex: action.stepIndex, variantId: variant.id },
   });
   await enqueue(DELIVER_JOB, { workspaceId, messageId: message._id });
+  await maybeTriggerOptimizer(workspaceId, campaign._id, enqueue);
   await advance(workspaceId, enr, campaign, contact, settings, now, enqueue);
+}
+
+/**
+ * After every {@link OPTIMIZER_SEND_INTERVAL} sends for a campaign, kicks the optimizer (analysis,
+ * insights, challenger proposals). Best-effort: the optimizer is advisory, so a failure here never
+ * fails the send.
+ */
+async function maybeTriggerOptimizer(
+  workspaceId: Id,
+  campaignId: Id,
+  enqueue: typeof seamEnqueue,
+): Promise<void> {
+  try {
+    const sends = await Messages.count(workspaceId, {
+      campaignId,
+      direction: 'outbound',
+      variantId: { $exists: true },
+    });
+    if (sends > 0 && sends % OPTIMIZER_SEND_INTERVAL === 0)
+      await enqueue(OPTIMIZER_JOB, { workspaceId, campaignId });
+  } catch {
+    // Advisory only — never let the optimizer trigger break a send.
+  }
 }
 
 defineJob(CAMPAIGN_STEP_JOB, (payload) => runStep(payload));

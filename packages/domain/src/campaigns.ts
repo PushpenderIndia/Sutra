@@ -30,6 +30,7 @@ export const sequencePlan = z.object({
 export type SequencePlan = z.infer<typeof sequencePlan>;
 
 export const variantDimension = z.enum(['subject', 'hook', 'cta', 'length', 'tone']);
+export type VariantDimension = z.infer<typeof variantDimension>;
 
 /** Variant writer output (PR 12): a template that differs from its sibling in one dimension. */
 export const variant = z.object({
@@ -79,6 +80,57 @@ export type CampaignStep = z.infer<typeof campaignStep>;
 
 /** What the bandit optimises (PR 15). Opens are never a reward: they're unreliable. */
 export const reward = z.enum(['positive_reply', 'reply', 'click']);
+export type Reward = z.infer<typeof reward>;
+
+/**
+ * Per-variant metrics (PR 15), aggregated from `messages`, `tracking_events` and `replies`.
+ * `sent` is the number of real sends (the bandit's trial count); `opens` are human opens only and
+ * are approximate (privacy proxies), so they are display-only and never a reward.
+ */
+export const variantMetrics = z.object({
+  sent: count,
+  delivered: count,
+  opens: count,
+  clicks: count,
+  replies: count,
+  positiveReplies: count,
+  unsubscribes: count,
+  bounces: count,
+});
+export type VariantMetrics = z.infer<typeof variantMetrics>;
+
+export const EMPTY_METRICS: VariantMetrics = {
+  sent: 0,
+  delivered: 0,
+  opens: 0,
+  clicks: 0,
+  replies: 0,
+  positiveReplies: 0,
+  unsubscribes: 0,
+  bounces: 0,
+};
+
+/** The reward count for a campaign's chosen metric — the bandit's "successes" for an arm. */
+export function rewardSuccesses(metrics: VariantMetrics, r: Reward): number {
+  if (r === 'click') return metrics.clicks;
+  if (r === 'reply') return metrics.replies;
+  return metrics.positiveReplies;
+}
+
+/**
+ * One optimizer insight shown on the Campaigns tab. `text` always cites the numbers it is based on
+ * (acceptance criterion); `stepIndex` points at the step it is about when it is step-specific.
+ */
+export const optimizerInsight = z.object({
+  text: z.string().max(280),
+  stepIndex: count.optional(),
+  at: z.date(),
+});
+export type OptimizerInsight = z.infer<typeof optimizerInsight>;
+
+/** A challenger the optimizer proposes for a step: a new variant that changes one dimension. */
+export const challengerProposal = variant;
+export type ChallengerProposal = z.infer<typeof challengerProposal>;
 
 export const campaign = doc({
   name: z.string().min(1),
@@ -91,6 +143,8 @@ export const campaign = doc({
   approvedBy: userId.optional(),
   approvedAt: z.date().optional(),
   approvedHash: z.string().optional(),
+  /** Latest optimizer insights (PR 15), most recent first; each cites the numbers behind it. */
+  insights: z.array(optimizerInsight).optional(),
 });
 export type Campaign = z.infer<typeof campaign>;
 

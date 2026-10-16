@@ -1,6 +1,7 @@
 import { enrollApprovedCampaigns } from './campaign/enroll.ts';
 import { runCopywriter } from './copywriter/run.ts';
 import { runEnricher } from './enricher/run.ts';
+import { runOptimizer } from './optimizer/run.ts';
 import { definePipeline } from './pipeline/define.ts';
 import { runProfiler } from './profiler/run.ts';
 import { enabledProspectorSources, runProspectorSource } from './prospector/run.ts';
@@ -25,7 +26,15 @@ export const mainPipeline = definePipeline(
   {
     orchestrator: {
       label: 'Orchestrator',
-      children: ['profiler', 'checkpoint1', 'prospector', 'enricher', 'copywriter', 'sender'],
+      children: [
+        'profiler',
+        'checkpoint1',
+        'prospector',
+        'enricher',
+        'copywriter',
+        'sender',
+        'optimizer',
+      ],
     },
     profiler: {
       label: 'Business Profiler',
@@ -86,6 +95,14 @@ export const mainPipeline = definePipeline(
       label: 'Reply Analyst',
       trigger: 'reply.received',
       run: runReplyAnalyst,
+    },
+    // Event-driven (PR 17 cron node): on the `maintenance` cron and after every 50 sends per campaign,
+    // run the Thompson-sampling bandit's analysis — retire losers, record data-cited insights and write
+    // AI challengers into the approval queue. It activates nothing itself.
+    optimizer: {
+      label: 'A/B Optimizer',
+      trigger: 'cron',
+      run: runOptimizer,
     },
   },
   { name: 'main' },

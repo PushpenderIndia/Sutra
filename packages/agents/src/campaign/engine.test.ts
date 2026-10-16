@@ -1,6 +1,7 @@
 import { newId } from '@sutra/db';
 import type { Campaign, CampaignVariant, Enrollment, Message } from '@sutra/domain';
 import { describe, expect, it } from 'vitest';
+import { seededRng } from '../optimizer/bandit.ts';
 import { nextAction, pickVariant, sendableVariants } from './engine.ts';
 
 const NOW = new Date('2026-10-13T02:00:00Z');
@@ -161,12 +162,44 @@ describe('sendableVariants / pickVariant', () => {
     expect(sendableVariants(step)).toHaveLength(1);
   });
 
-  it('picks uniformly among sendable variants and never an unapproved one', () => {
+  it('returns the only sendable variant without consulting the bandit', () => {
+    const a = variant();
+    const step = { delayDays: 0, variants: [a, variant({ status: 'paused' })] };
+    expect(pickVariant(step)?.id).toBe(a.id);
+  });
+
+  it('only ever assigns a sendable variant (never an unapproved or retired one)', () => {
     const a = variant();
     const b = variant();
-    const step = { delayDays: 0, variants: [a, b, variant({ status: 'paused' })] };
-    expect(pickVariant(step, () => 0)?.id).toBe(a.id);
-    expect(pickVariant(step, () => 0.99)?.id).toBe(b.id);
+    const step = {
+      delayDays: 0,
+      variants: [
+        a,
+        b,
+        variant({ status: 'paused' }),
+        variant({ status: 'retired' }),
+        variant({ status: 'draft', approvedHash: undefined }),
+      ],
+    };
+    const rng = seededRng(7);
+    const sendable = new Set([a.id, b.id]);
+    for (let i = 0; i < 200; i++) {
+      const picked = pickVariant(step, () => ({ sends: 0, successes: 0 }), rng);
+      expect(picked && sendable.has(picked.id)).toBe(true);
+    }
+  });
+
+  it('favours the arm with the higher reward rate (Thompson sampling)', () => {
+    const a = variant();
+    const b = variant();
+    const step = { delayDays: 0, variants: [a, b] };
+    // A: 40/100 rewards, B: 10/100 — A should win the large majority of assignments.
+    const stats = (id: string) =>
+      id === a.id ? { sends: 100, successes: 40 } : { sends: 100, successes: 10 };
+    const rng = seededRng(42);
+    let picksA = 0;
+    for (let i = 0; i < 500; i++) if (pickVariant(step, stats, rng)?.id === a.id) picksA++;
+    expect(picksA).toBeGreaterThan(400);
   });
 
   it('returns undefined when nothing is sendable', () => {

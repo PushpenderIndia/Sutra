@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { Campaign, CampaignStep, CampaignVariant, Id } from '@sutra/domain';
+import type { Actor, Campaign, CampaignStep, CampaignVariant, Id } from '@sutra/domain';
 import { audit } from './audit.ts';
 import { Campaigns } from './collections.ts';
 
@@ -90,6 +90,121 @@ export async function approveCampaign(
     entity: 'campaigns',
     entityId: campaignId,
     data: { variants: steps.flatMap((s) => s.variants).length },
+  });
+  return updated;
+}
+
+/** Max active arms per step (PR 15 §4). Approving a fifth must retire one of the four first. */
+export const MAX_ACTIVE_ARMS = 4;
+
+const ACTIVE_VARIANT = new Set(['approved', 'active']);
+
+export type ApproveVariantResult =
+  | { ok: true; campaign: Campaign }
+  | { ok: false; reason: 'not_found' | 'not_approvable' }
+  | { ok: false; reason: 'too_many_arms'; active: Id[] };
+
+/**
+ * Approves one optimizer-suggested (or draft) challenger: it becomes `active` with its content hash,
+ * approver and time, so the bandit starts exploring it. A step may hold at most {@link MAX_ACTIVE_ARMS}
+ * active arms; approving one more returns `too_many_arms` with the current active ids, unless
+ * `retireVariantId` names one to retire in the same write. Pure guard: nothing is ever sent by this —
+ * the engine still needs each send's approved-variant permit, which only an `active` variant has.
+ */
+export async function approveVariant(
+  workspaceId: Id,
+  input: { campaignId: Id; stepIndex: number; variantId: Id; retireVariantId?: Id },
+  by: string,
+  at: Date = new Date(),
+): Promise<ApproveVariantResult> {
+  const { campaignId, stepIndex, variantId, retireVariantId } = input;
+  const campaign = await Campaigns.get(workspaceId, campaignId);
+  const step = campaign?.steps[stepIndex];
+  const target = step?.variants.find((v) => v.id === variantId);
+  if (!campaign || !step || !target) return { ok: false, reason: 'not_found' };
+  if (!APPROVABLE_VARIANT.has(target.status) || ACTIVE_VARIANT.has(target.status))
+    return { ok: false, reason: 'not_approvable' };
+
+  const active = step.variants.filter(
+    (v) => ACTIVE_VARIANT.has(v.status) && v.id !== retireVariantId,
+  );
+  if (active.length >= MAX_ACTIVE_ARMS)
+    return { ok: false, reason: 'too_many_arms', active: active.map((v) => v.id) };
+
+  const variants = step.variants.map((v) => {
+    if (v.id === variantId) return approveVariantContent(v, by, at);
+    if (v.id === retireVariantId && (v.status === 'active' || v.status === 'paused'))
+      return { ...v, status: 'retired' as const };
+    return v;
+  });
+  const steps = campaign.steps.map((s, i) => (i === stepIndex ? { ...s, variants } : s));
+  const updated = await Campaigns.update(workspaceId, campaignId, { steps });
+  await audit(workspaceId, { kind: 'user', id: by }, 'variant.approve', {
+    entity: 'campaigns',
+    entityId: campaignId,
+    data: { variantId, stepIndex, retired: retireVariantId },
+  });
+  return updated ? { ok: true, campaign: updated } : { ok: false, reason: 'not_found' };
+}
+
+/** Rejects a suggested challenger (`draft`/`pending_approval` → `rejected`); it is never sent. */
+export async function rejectVariant(
+  workspaceId: Id,
+  input: { campaignId: Id; stepIndex: number; variantId: Id },
+  by: string,
+): Promise<Campaign | null> {
+  const { campaignId, stepIndex, variantId } = input;
+  const campaign = await Campaigns.get(workspaceId, campaignId);
+  const target = campaign?.steps[stepIndex]?.variants.find((v) => v.id === variantId);
+  if (!campaign || !target) return null;
+  if (!APPROVABLE_VARIANT.has(target.status) || ACTIVE_VARIANT.has(target.status)) return campaign;
+
+  const steps = campaign.steps.map((s, i) =>
+    i === stepIndex
+      ? {
+          ...s,
+          variants: s.variants.map((v) =>
+            v.id === variantId ? { ...v, status: 'rejected' as const } : v,
+          ),
+        }
+      : s,
+  );
+  const updated = await Campaigns.update(workspaceId, campaignId, { steps });
+  await audit(workspaceId, { kind: 'user', id: by }, 'variant.reject', {
+    entity: 'campaigns',
+    entityId: campaignId,
+    data: { variantId, stepIndex },
+  });
+  return updated;
+}
+
+/** Retires an active/paused variant so the bandit stops assigning it. Idempotent and audited. */
+export async function retireVariant(
+  workspaceId: Id,
+  input: { campaignId: Id; stepIndex: number; variantId: Id },
+  by: Actor = { kind: 'system', id: 'optimizer' },
+): Promise<Campaign | null> {
+  const { campaignId, stepIndex, variantId } = input;
+  const campaign = await Campaigns.get(workspaceId, campaignId);
+  const target = campaign?.steps[stepIndex]?.variants.find((v) => v.id === variantId);
+  if (!campaign || !target) return null;
+  if (target.status !== 'active' && target.status !== 'paused') return campaign;
+
+  const steps = campaign.steps.map((s, i) =>
+    i === stepIndex
+      ? {
+          ...s,
+          variants: s.variants.map((v) =>
+            v.id === variantId ? { ...v, status: 'retired' as const } : v,
+          ),
+        }
+      : s,
+  );
+  const updated = await Campaigns.update(workspaceId, campaignId, { steps });
+  await audit(workspaceId, by, 'variant.retire', {
+    entity: 'campaigns',
+    entityId: campaignId,
+    data: { variantId, stepIndex },
   });
   return updated;
 }

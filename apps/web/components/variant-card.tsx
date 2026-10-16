@@ -1,6 +1,6 @@
 'use client';
 import type { Locale } from '@sutra/domain';
-import { ExternalLink, Eye, Pencil, Sparkles } from 'lucide-react';
+import { Crown, ExternalLink, Eye, Pencil, Sparkles } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -79,6 +79,7 @@ export function VariantCard({
         {variant.origin === 'optimizer' && (
           <Sparkles aria-label={t('optimizer')} className="size-3.5 text-saffron-ink" />
         )}
+        {variant.winner && <Crown aria-label={t('winner')} className="size-3.5 text-saffron-ink" />}
         <StatusBadge status={variant.status} />
         {variant.flags.length > 0 && (
           <Badge variant="destructive" title={variant.flags.join('\n')}>
@@ -161,17 +162,61 @@ export function VariantCard({
         <Stat label={t('sent')} value={variant.stats.sent} />
         <Stat label={t('opens')} value={`≈${variant.stats.opens}`} />
         <Stat label={t('clicks')} value={variant.stats.clicks} />
-        <Stat label={t('replyRate')} value={percent(variant.stats.replies, variant.stats.sent)} />
+        <Stat
+          label={t('replyRate')}
+          value={percent(variant.stats.replies, variant.stats.sent)}
+          hint={
+            variant.stats.sent > 0
+              ? t('band', {
+                  low: Math.round(variant.replyBand.low * 100),
+                  high: Math.round(variant.replyBand.high * 100),
+                })
+              : undefined
+          }
+        />
       </dl>
+
+      {/* Bandit analysis: P(best) and current traffic share, honest about small samples. */}
+      {variant.status === 'active' && (
+        <div className="flex flex-col gap-1 text-xs">
+          {variant.enoughData ? (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">{t('pBest')}</span>
+                <span className="font-medium tabular-nums">{Math.round(variant.pBest * 100)}%</span>
+              </div>
+              <div
+                className="h-1.5 overflow-hidden rounded-full bg-secondary"
+                role="progressbar"
+                aria-valuenow={Math.round(variant.pBest * 100)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={t('pBest')}
+              >
+                <div
+                  className="h-full rounded-full bg-saffron-ink"
+                  style={{ width: `${Math.round(variant.pBest * 100)}%` }}
+                />
+              </div>
+              <span className="text-muted-foreground">
+                {t('trafficShare', { share: Math.round(variant.trafficShare * 100) })}
+              </span>
+            </>
+          ) : (
+            <span className="text-muted-foreground">{t('notEnoughData')}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function Stat({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
     <div className="flex flex-col">
       <dd className="font-medium tabular-nums">{value}</dd>
       <dt className="text-muted-foreground">{label}</dt>
+      {hint && <dd className="text-[10px] text-muted-foreground tabular-nums">{hint}</dd>}
     </div>
   );
 }

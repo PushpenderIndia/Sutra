@@ -79,6 +79,37 @@ export {
 export { LiteLlm, LlmHttpError } from './llm/lite-llm.ts';
 export { acquireModelSlot, RateLimiter, rpmLimits } from './llm/rate-limit.ts';
 export {
+  type ArmEvaluation,
+  type ArmStats,
+  chooseVariant,
+  DEFAULT_DRAWS,
+  EXPLORE_FLOOR,
+  EXPLORE_MIN_SENDS,
+  evaluateArms,
+  MIN_CONFIDENT_SENDS,
+  probabilityBest,
+  type RateBand,
+  RETIRE_MIN_SENDS,
+  RETIRE_PBEST,
+  type Rng,
+  sampleBeta,
+  seededRng,
+  type VariantId,
+  WINNER_MIN_SENDS,
+  WINNER_PBEST,
+  wilsonInterval,
+} from './optimizer/bandit.ts';
+export { type OptimizerDeps, optimizerDeps, setOptimizerDeps } from './optimizer/deps.ts';
+export {
+  CHALLENGER_MIN_SENDS,
+  MAX_CHALLENGERS_PER_RUN,
+  OPTIMIZER_JOB,
+  OPTIMIZER_SEND_INTERVAL,
+  type OptimizeResult,
+  optimizeCampaign,
+  runOptimizer,
+} from './optimizer/run.ts';
+export {
   definePipeline,
   getPipeline,
   type NodeContext,

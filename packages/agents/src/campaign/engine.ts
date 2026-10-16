@@ -1,4 +1,5 @@
 import type { Campaign, CampaignVariant, Enrollment, Message, StopReason } from '@sutra/domain';
+import { type ArmStats, chooseVariant, type Rng } from '../optimizer/bandit.ts';
 
 /**
  * What the engine decides to do for one enrollment, right now. The `campaign.step` job turns
@@ -60,16 +61,30 @@ export function nextAction(
   return { type: 'send', stepIndex: enr.stepIndex };
 }
 
+/** Per-variant stats the bandit needs: trials (`sends`) and rewards (`successes`) for the arm. */
+export type VariantStatsLookup = (variantId: string) => { sends: number; successes: number };
+
+/** No-stats lookup: every arm is a flat Beta(1, 1) prior, so assignment is effectively uniform. */
+const NO_STATS: VariantStatsLookup = () => ({ sends: 0, successes: 0 });
+
 /**
- * Picks a variant for a step from its approved, active variants. Uses a uniform random choice
- * until the Thompson-sampling bandit ships (PR 15), which will replace `random` with reward-weighted
- * sampling. Returns `undefined` only when the step has no sendable variant.
+ * Picks a variant for a step from its approved, active variants using the Thompson-sampling bandit
+ * (PR 15): each arm is a Beta posterior over its reward rate, with an exploration floor for arms that
+ * don't yet have enough data. `stats` supplies each arm's sends and rewards (the campaign engine fills
+ * it from the aggregated per-variant metrics); with no stats it falls back to a uniform prior. Retired
+ * variants are already excluded (they're neither approved nor active). Returns `undefined` only when
+ * the step has no sendable variant.
  */
 export function pickVariant(
   step: Campaign['steps'][number],
-  random: () => number = Math.random,
+  stats: VariantStatsLookup = NO_STATS,
+  rng: Rng = Math.random,
 ): CampaignVariant | undefined {
   const options = sendableVariants(step);
-  if (!options.length) return undefined;
-  return options[Math.floor(random() * options.length)] ?? options[0];
+  const first = options[0];
+  if (!first) return undefined;
+  if (options.length === 1) return first;
+  const arms: ArmStats[] = options.map((v) => ({ id: v.id, ...stats(v.id) }));
+  const chosen = chooseVariant(arms, rng);
+  return options.find((v) => v.id === chosen) ?? first;
 }

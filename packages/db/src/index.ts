@@ -3,9 +3,14 @@ import 'server-only';
 export { type ComplianceStatus, statusOf, summarize } from '@sutra/compliance';
 export {
   type ApprovedVariant,
+  type ApproveVariantResult,
   approveCampaign,
   approvedVariant,
+  approveVariant,
   campaignHash,
+  MAX_ACTIVE_ARMS,
+  rejectVariant,
+  retireVariant,
   variantHash,
 } from './approval.ts';
 export { audit } from './audit.ts';
@@ -31,3 +36,4 @@ export { toMongoSchema } from './json-schema.ts';
 export { migrate } from './migrate.ts';
 export { type Input, newId, type Patch, type Repository, repository } from './repository.ts';
 export { DEMO_WORKSPACE_ID, seedDemo } from './seed.ts';
+export { metricsFor, variantMetrics } from './stats.ts';

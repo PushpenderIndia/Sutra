@@ -2,7 +2,9 @@
 import type { Locale } from '@sutra/domain';
 import {
   CalendarClock,
+  Check,
   Eye,
+  Lightbulb,
   Mail,
   Megaphone,
   MousePointerClick,
@@ -12,7 +14,9 @@ import {
   Reply,
   Send,
   ShieldCheck,
+  Sparkles,
   Users,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -21,8 +25,10 @@ import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import {
   approveCampaign,
+  approveSuggestedVariant,
   pauseCampaign,
   regenerateVariants,
+  rejectSuggestedVariant,
   resumeCampaign,
 } from '@/actions/campaigns';
 import { Checkpoint } from '@/components/checkpoint';
@@ -34,7 +40,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { VariantCard } from '@/components/variant-card';
-import type { CampaignView } from '@/lib/data/campaigns';
+import type { CampaignView, SuggestedVariant } from '@/lib/data/campaigns';
 import { percent } from '@/lib/format';
 
 type Step = CampaignView['steps'][number];
@@ -80,9 +86,19 @@ export function CampaignsView({ campaigns }: { campaigns: CampaignView[] }) {
               </h2>
               <StatusBadge status={c.status} />
               {c.persona && <Badge variant="outline">{c.persona}</Badge>}
+              {c.suggested.length > 0 && (
+                <Badge className="gap-1 bg-saffron text-saffron-ink">
+                  <Sparkles className="size-3" />
+                  {t('suggestedCount', { count: c.suggested.length })}
+                </Badge>
+              )}
               <CampaignControls id={c.id} status={c.status} />
             </div>
             <ApprovalPanel campaign={c} />
+            {c.insights.length > 0 && <Insights items={c.insights} />}
+            {c.suggested.length > 0 && (
+              <SuggestedVariants campaignId={c.id} suggestions={c.suggested} />
+            )}
             <StatCards
               label={c.name}
               items={[
@@ -330,5 +346,144 @@ function StepBlock({
         ))}
       </div>
     </li>
+  );
+}
+
+/** The optimizer's insights for a campaign — each already cites the numbers behind it. */
+function Insights({ items }: { items: CampaignView['insights'] }) {
+  const t = useTranslations('campaigns');
+  return (
+    <div className="flex flex-col gap-1.5 rounded-lg border bg-muted/30 p-3">
+      <h3 className="inline-flex items-center gap-1.5 text-sm font-medium">
+        <Lightbulb className="size-3.5 text-saffron-ink" aria-hidden />
+        {t('insights')}
+      </h3>
+      <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
+        {items.map((insight) => (
+          <li key={insight.text}>{insight.text}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * The approval queue for optimizer-suggested challengers (PR 15). Each shows the current best arm vs
+ * the challenger, the hypothesis, the data it is based on and the traffic it would get. Nothing here
+ * has been sent — Approve (owner/admin) activates it so the bandit starts exploring; Reject drops it.
+ */
+function SuggestedVariants({
+  campaignId,
+  suggestions,
+}: {
+  campaignId: string;
+  suggestions: SuggestedVariant[];
+}) {
+  const t = useTranslations('campaigns');
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-saffron/50 bg-saffron/5 p-3">
+      <h3 className="inline-flex items-center gap-1.5 text-sm font-medium">
+        <Sparkles className="size-3.5 text-saffron-ink" aria-hidden />
+        {t('suggestedCount', { count: suggestions.length })}
+      </h3>
+      <div className="flex flex-col gap-3">
+        {suggestions.map((s) => (
+          <Suggestion key={s.variantId} campaignId={campaignId} suggestion={s} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Suggestion({
+  campaignId,
+  suggestion: s,
+}: {
+  campaignId: string;
+  suggestion: SuggestedVariant;
+}) {
+  const t = useTranslations('campaigns');
+  const router = useRouter();
+  const [pending, start] = useTransition();
+
+  const approve = () =>
+    start(async () => {
+      const res = await approveSuggestedVariant({
+        campaignId,
+        stepIndex: s.stepIndex,
+        variantId: s.variantId,
+      });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      if (res.data.tooManyArms) toast.error(t('tooManyArms'));
+      else {
+        toast.success(t('suggestionApproved'));
+        router.refresh();
+      }
+    });
+
+  const reject = () =>
+    start(async () => {
+      const res = await rejectSuggestedVariant({
+        campaignId,
+        stepIndex: s.stepIndex,
+        variantId: s.variantId,
+      });
+      if (!res.ok) toast.error(res.error);
+      else {
+        toast.success(t('suggestionRejected'));
+        router.refresh();
+      }
+    });
+
+  return (
+    <div className="flex flex-col gap-2 rounded-md border bg-card p-3">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="font-medium">{t('step', { n: s.stepIndex + 1 })}</span>
+        <Badge variant="outline">{t(`dimensions.${s.dimension}`)}</Badge>
+        {s.flags.length > 0 && (
+          <Badge variant="destructive" title={s.flags.join('\n')}>
+            {t('flagged', { count: s.flags.length })}
+          </Badge>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">{s.hypothesis}</p>
+
+      <div className="grid gap-2 text-sm md:grid-cols-2">
+        {s.best && (
+          <div className="rounded-md border bg-muted/30 p-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              {t('currentBest', { letter: s.best.letter })}
+            </p>
+            <p className="font-medium">{s.best.subject}</p>
+            <p className="whitespace-pre-wrap text-xs text-muted-foreground">{s.best.body}</p>
+          </div>
+        )}
+        <div className="rounded-md border border-saffron/50 p-2">
+          <p className="text-xs font-medium text-saffron-ink">{t('challenger')}</p>
+          <p className="font-medium">{s.subject}</p>
+          <p className="whitespace-pre-wrap text-xs text-muted-foreground">{s.body}</p>
+        </div>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        {s.best && t('basedOn', { sends: s.best.sends, replies: s.best.replies })}
+        {' · '}
+        {t('expectedShare', { share: Math.round(s.expectedShare * 100) })}
+      </p>
+
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" disabled={pending} onClick={approve}>
+          <Check className="size-3.5" />
+          {t('approveVariant')}
+        </Button>
+        <Button size="sm" variant="ghost" disabled={pending} onClick={reject}>
+          <X className="size-3.5" />
+          {t('rejectVariant')}
+        </Button>
+      </div>
+    </div>
   );
 }

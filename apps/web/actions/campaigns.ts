@@ -10,11 +10,13 @@ import {
 } from '@sutra/agents';
 import {
   approveCampaign as approveCampaignContent,
+  approveVariant,
   audit,
   Campaigns,
   Companies,
   Contacts,
   Enrollments,
+  rejectVariant,
   WorkspaceSettings,
 } from '@sutra/db';
 import type { Campaign, CampaignVariant, Contact, Locale } from '@sutra/domain';
@@ -136,6 +138,39 @@ export const approveCampaign = action(
     // The sender node enrols when the pipeline resumes; otherwise enrol here (idempotent either way).
     const enrolled = resumed ? 0 : await enrollCampaign(workspaceId, approved, { enqueue });
     return { ok: true as const, enrolled };
+  },
+  { role: 'admin' },
+);
+
+/**
+ * Approves one optimizer-suggested challenger (owner/admin): it becomes `active`, so the bandit starts
+ * exploring it. A step allows at most four active arms; approving a fifth returns `tooManyArms` with the
+ * current arms so the caller can pick one to retire and resend with `retireVariantId`. Nothing is sent
+ * until this runs, and the send still needs the per-send approved-variant permit an `active` arm has.
+ */
+export const approveSuggestedVariant = action(
+  z.object({ campaignId: id, stepIndex: count, variantId: id, retireVariantId: id.optional() }),
+  async ({ workspaceId, user }, { campaignId, stepIndex, variantId, retireVariantId }) => {
+    const result = await approveVariant(
+      workspaceId,
+      { campaignId, stepIndex, variantId, retireVariantId },
+      user.id,
+    );
+    if (result.ok) return { ok: true as const, tooManyArms: false as const };
+    if (result.reason === 'too_many_arms')
+      return { ok: true as const, tooManyArms: true as const, active: result.active };
+    throw new AppError('INVALID', 'That variant can no longer be approved');
+  },
+  { role: 'admin' },
+);
+
+/** Rejects an optimizer-suggested challenger (owner/admin); it is never sent. Also available via chat. */
+export const rejectSuggestedVariant = action(
+  z.object({ campaignId: id, stepIndex: count, variantId: id }),
+  async ({ workspaceId, user }, { campaignId, stepIndex, variantId }) => {
+    const updated = await rejectVariant(workspaceId, { campaignId, stepIndex, variantId }, user.id);
+    if (!updated) throw new AppError('NOT_FOUND', 'That variant no longer exists');
+    return { ok: true as const };
   },
   { role: 'admin' },
 );

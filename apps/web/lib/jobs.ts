@@ -10,7 +10,7 @@ import {
   sweepDueEnrollments,
 } from '@sutra/agents';
 import { env } from '@sutra/config';
-import { Enrollments, Messages, retentionSweep } from '@sutra/db';
+import { Campaigns, Enrollments, Messages, retentionSweep } from '@sutra/db';
 import { deliver, onReply, renewWatches } from '@sutra/mail';
 import { CloudTasksDispatcher } from './cloud-tasks';
 import { mainPipeline } from './pipeline';
@@ -55,6 +55,19 @@ export async function maintenance(now = new Date()): Promise<void> {
 
   const workspaces = (await Enrollments.col().distinct('workspaceId', {})) as string[];
   for (const ws of workspaces) await retentionSweep(ws, now).catch(() => {});
+
+  // Run the A/B optimizer once per cron for every workspace with a live campaign: retire losers,
+  // record insights and propose challengers into the approval queue (it activates nothing itself).
+  const pipeline = mainPipeline();
+  if (pipeline) {
+    const liveWorkspaces = (await Campaigns.col().distinct('workspaceId', {
+      status: { $in: ['running', 'paused'] },
+    })) as string[];
+    for (const ws of liveWorkspaces)
+      await runTrigger(pipeline, ws, 'optimizer').catch((error) =>
+        console.error('optimizer', error),
+      );
+  }
 }
 defineJob('maintenance', () => maintenance());
 
