@@ -12,10 +12,13 @@ import {
   userId,
 } from './common.ts';
 import { pipelineNodeStatus, pipelineRunStatus } from './status.ts';
+import { website } from './workspace.ts';
 
 export const weekday = z.int().min(0).max(6);
 
 export const workspaceSettings = doc({
+  /** The company website onboarding started from; the profiler (PR 07) researches it. */
+  website: website.optional(),
   senderName: z.string(),
   senderTitle: z.string().optional(),
   signature: z.string().optional(),

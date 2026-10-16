@@ -189,10 +189,15 @@ function toLlmResponse(
 }
 
 async function* sse(body: ReadableStream<Uint8Array>): AsyncGenerator<Completion> {
-  let buffer = '';
+  // A reader + TextDecoder (rather than `pipeThrough(new TextDecoderStream())`) so the stream
+  // types check identically under both the Node and DOM lib definitions across the monorepo.
+  const reader = body.getReader();
   const decoder = new TextDecoder();
-  for await (const bytes of body) {
-    buffer += decoder.decode(bytes, { stream: true });
+  let buffer = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split('\n');
     buffer = lines.pop() ?? '';
     for (const line of lines) {

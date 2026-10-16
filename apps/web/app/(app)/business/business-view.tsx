@@ -6,13 +6,17 @@ import {
   icp as icpSchema,
 } from '@sutra/domain';
 import { ExternalLink, Quote } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { toast } from 'sonner';
+import { confirmProfile, saveIcp, saveProfile } from '@/actions/business';
 import { Checkpoint } from '@/components/checkpoint';
 import { EditableCard } from '@/components/editable-card';
 import { PageHeader } from '@/components/page-header';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Result } from '@/lib/action';
 
 const companyFields = businessProfile.pick({
   oneLiner: true,
@@ -48,10 +52,22 @@ function Term({ label, children }: { label: string; children: React.ReactNode })
 
 const host = (url: string) => new URL(url).hostname.replace(/^www\./, '');
 
-/** Checkpoint 1 plus the profile, ICP and personas (read-only until PR 07 adds editing). */
+/** Checkpoint 1 plus the editable profile, ICP and personas. */
 export function BusinessView({ profile, icp }: { profile: BusinessProfileDoc; icp?: IcpDoc }) {
   const t = useTranslations('business');
+  const router = useRouter();
   const regions = new Intl.DisplayNames([useLocale()], { type: 'region' });
+
+  /** Awaits a save/confirm action, surfaces any error and refreshes the server-rendered tab. */
+  const run = async <O,>(action: Promise<Result<O>>) => {
+    const result = await action;
+    if (!result.ok) {
+      toast.error(result.error);
+      throw new Error(result.error);
+    }
+    router.refresh();
+  };
+
   return (
     <>
       <PageHeader
@@ -77,12 +93,14 @@ export function BusinessView({ profile, icp }: { profile: BusinessProfileDoc; ic
         title={t('checkpoint')}
         summary={t('checkpointHint')}
         confirmed={profile.status === 'confirmed'}
+        onConfirm={() => run(confirmProfile({}))}
       />
       <div className="grid gap-4 xl:grid-cols-2">
         <EditableCard
           title={t('company')}
           schema={companyFields}
           value={profile}
+          onSave={(value) => run(saveProfile(value))}
           labels={{
             oneLiner: t('oneLiner'),
             toneOfVoice: t('tone'),
@@ -229,6 +247,7 @@ export function BusinessView({ profile, icp }: { profile: BusinessProfileDoc; ic
             title={t('targeting')}
             schema={targetingFields}
             value={icp}
+            onSave={(value) => run(saveIcp(value))}
             labels={{
               buyingSignals: t('signals'),
               disqualifiers: t('disqualifiers'),

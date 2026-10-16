@@ -27,6 +27,7 @@ export const createWorkspace = userAction(
       },
     });
     await WorkspaceSettings.create(org.id, {
+      website: site,
       senderName: user.name || user.email.split('@')[0] || user.email,
       homeCountry: countryFromSite(site),
       timezone: tz,
@@ -35,7 +36,7 @@ export const createWorkspace = userAction(
     });
     const actor = { kind: 'user', id: user.id } as const;
     await audit(org.id, actor, 'workspace.create', { entity: 'workspaces', entityId: org.id });
-    await startProfiler(org.id, site);
+    await startProfiler(org.id);
     redirect('/business');
   },
 );

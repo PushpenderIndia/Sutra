@@ -20,6 +20,65 @@ export const subNodeId = (nodeId: string, agent: string) => `${nodeId}/${agent}`
 const nodes = () => PipelineNodes.col();
 
 /**
+ * Records a non-LLM sub-step (a deterministic tool such as the crawler) as a child node of the
+ * running pipeline node, so it appears in the agent graph the same way `runAgent` agents do.
+ * Outside a pipeline node it just runs the function.
+ */
+export async function recordStep<T>(
+  agent: string,
+  run: () => Promise<T>,
+  summary?: (result: T) => string,
+): Promise<T> {
+  const scope = nodeScope.getStore();
+  if (!scope) return run();
+  const key = {
+    workspaceId: scope.workspaceId,
+    runId: scope.runId,
+    nodeId: subNodeId(scope.nodeId, agent),
+  };
+  const now = new Date();
+  await nodes().updateOne(
+    key,
+    {
+      $set: { status: 'running', startedAt: now, updatedAt: now },
+      $unset: { endedAt: '', error: '' },
+      $setOnInsert: {
+        _id: newId(),
+        parentId: scope.nodeId,
+        agent,
+        tokens: 0,
+        costUsd: 0,
+        toolCalls: [],
+        createdAt: now,
+      },
+    },
+    { upsert: true },
+  );
+  try {
+    const result = await run();
+    await nodes().updateOne(key, {
+      $set: {
+        status: 'done',
+        endedAt: new Date(),
+        updatedAt: new Date(),
+        ...(summary && { summary: summary(result) }),
+      },
+    });
+    return result;
+  } catch (error) {
+    await nodes().updateOne(key, {
+      $set: {
+        status: 'failed',
+        endedAt: new Date(),
+        updatedAt: new Date(),
+        error: (error as Error).message,
+      },
+    });
+    throw error;
+  }
+}
+
+/**
  * Records sub-agents, tool calls, tokens and cost of agents run inside a pipeline node into
  * `pipeline_nodes`, so agents need no graph code. Outside a pipeline node it does nothing.
  */

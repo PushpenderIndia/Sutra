@@ -1,10 +1,13 @@
 import { WorkspaceSettings } from '@sutra/db';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { route } from '@/lib/action';
 import { auth } from '@/lib/auth';
 import { as, signIn, signUp } from '@/test/request';
 import { createWorkspace, updateComplianceOverrides } from './workspace';
+
+// Onboarding kicks off the profiler pipeline; that is covered in @sutra/agents, not here.
+vi.mock('@/lib/profiler', () => ({ startProfiler: vi.fn(async () => {}) }));
 
 const overrides = { complianceOverrides: { ID: { requireUnsubscribe: true } } };
 
@@ -37,6 +40,7 @@ describe('workspace actions', () => {
     expect(JSON.parse(org?.metadata)).toEqual({ website: 'https://www.acme-labs.co.id' });
     expect(org?.members).toMatchObject([{ role: 'owner' }]);
     expect(await WorkspaceSettings.findOne(workspaceId, {})).toMatchObject({
+      website: 'https://www.acme-labs.co.id',
       homeCountry: 'ID',
       timezone: 'Asia/Jakarta',
       dailySendCap: 150,

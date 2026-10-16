@@ -88,6 +88,7 @@ export async function seedDemo({ now = new Date(), ownerEmail }: SeedOptions = {
   );
 
   await WorkspaceSettings.create(ws, {
+    website: 'https://pixelpress.sg',
     senderName: 'Mei Tan',
     senderTitle: 'Partnerships Lead',
     signature: 'Mei Tan · PixelPress',

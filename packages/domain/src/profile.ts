@@ -57,6 +57,40 @@ export const icp = z.object({
 });
 export type Icp = z.infer<typeof icp>;
 
+/** One crawled page, cleaned to readable text (PR 07 `crawler`). */
+export const crawlPage = z.object({
+  url: z.url(),
+  title: z.string(),
+  description: z.string().optional(),
+  headings: z.array(z.string()),
+  text: z.string(),
+});
+export type CrawlPage = z.infer<typeof crawlPage>;
+
+/** The crawler's output for one domain; cached for 7 days. */
+export const crawlResult = z.object({
+  website: z.url(),
+  domain: z.string(),
+  pages: z.array(crawlPage),
+  /** `alt` text of customer-logo images (seeds for lookalikes). */
+  logos: z.array(z.string()),
+  fetchedAt: z.date(),
+  /** True when the Gemini `url_context` fallback was used for a JS-only site. */
+  usedFallback: z.boolean(),
+});
+export type CrawlResult = z.infer<typeof crawlResult>;
+
+/** A fact the web researcher found, always with the page it came from. */
+export const researchFinding = z.object({ text: z.string(), sourceUrl: z.url() });
+export type ResearchFinding = z.infer<typeof researchFinding>;
+
+/** `webResearch` output: grounded findings plus the queries that produced them. */
+export const webResearchResult = z.object({
+  findings: z.array(researchFinding),
+  queries: z.array(z.string()),
+});
+export type WebResearchResult = z.infer<typeof webResearchResult>;
+
 /** Each edit is saved as a new `version`; the latest confirmed one drives the pipeline. */
 const versioned = { status: profileStatus, version: count.min(1) };
 

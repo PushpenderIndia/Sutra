@@ -14,9 +14,11 @@
   "dependencies": {
     "@google/adk": "2.3.0",
     "@google/genai": "2.30.0",
+    "@mozilla/readability": "0.6.0",
     "@sutra/config": "workspace:*",
     "@sutra/db": "workspace:*",
     "@sutra/domain": "workspace:*",
+    "linkedom": "0.18.13",
     "zod": "4.6.7",
     "server-only": "0.0.1"
   }
