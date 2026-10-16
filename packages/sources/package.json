@@ -8,5 +8,9 @@
   },
   "scripts": {
     "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@sutra/domain": "workspace:*",
+    "zod": "4.6.7"
   }
 }

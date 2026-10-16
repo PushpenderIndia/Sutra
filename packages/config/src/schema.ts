@@ -91,6 +91,11 @@ export const serverSchema = z.object({
     'Service account Cloud Tasks uses to sign job requests',
   ),
 
+  REGISTRY_SG_RESOURCE_ID: doc(
+    z.string().optional(),
+    'data.gov.sg CKAN resource id for the Singapore company registry (registry source); verify the dataset licence before enabling',
+  ),
+
   FEATURE_PAID_SOURCES: doc(bool.default(false), 'Allow workspaces to enable Apollo/Hunter'),
   FAKE_MAIL: doc(bool.default(false), 'Demo mode: simulate sends, opens, clicks and replies'),
 });

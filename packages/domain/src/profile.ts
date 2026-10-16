@@ -29,7 +29,9 @@ export const businessProfile = z.object({
 export type BusinessProfile = z.infer<typeof businessProfile>;
 
 export const companySize = z.enum(['1-10', '11-50', '51-200', '201-1000', '1000+']);
+export type CompanySize = z.infer<typeof companySize>;
 export const seniority = z.enum(['owner', 'c_level', 'vp', 'director', 'manager', 'ic']);
+export type Seniority = z.infer<typeof seniority>;
 
 export const persona = z.object({
   title: z.string(),

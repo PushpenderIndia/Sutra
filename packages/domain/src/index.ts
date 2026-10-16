@@ -7,6 +7,7 @@ export * from './compliance.ts';
 export * from './messages.ts';
 export * from './profile.ts';
 export * from './prospects.ts';
+export * from './sources.ts';
 export * from './status.ts';
 export * from './system.ts';
 export * from './workspace.ts';

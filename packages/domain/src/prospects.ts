@@ -73,6 +73,7 @@ export const company = doc({
 export type Company = z.infer<typeof company>;
 
 export const emailConfidence = z.enum(['verified', 'pattern', 'role']);
+export type EmailConfidence = z.infer<typeof emailConfidence>;
 
 export const contact = doc({
   companyId: id,

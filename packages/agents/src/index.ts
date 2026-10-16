@@ -62,6 +62,32 @@ export {
 export { runProfiler, saveIcpVersion, saveProfileVersion } from './profiler/run.ts';
 export * from './prompts/base.ts';
 export {
+  ApolloRestClient,
+  DataGovSgRegistry,
+  dnsEmailVerifier,
+  GeminiCompanySearch,
+  GooglePlacesClient,
+  HunterRestClient,
+  reservePlacesQuota,
+} from './prospector/clients.ts';
+export {
+  type FindContactsInput,
+  findContacts,
+} from './prospector/contact-finder.ts';
+export {
+  buildSourceContext,
+  type ProspectorDeps,
+  paidSourceKeys,
+  prospectorDeps,
+  setProspectorDeps,
+} from './prospector/deps.ts';
+export { enabledProspectorSources, runProspectorSource } from './prospector/run.ts';
+export {
+  type UpsertedCompany,
+  upsertCompanyDraft,
+  upsertContactDraft,
+} from './prospector/upsert.ts';
+export {
   AgentOutputError,
   AgentRunError,
   APP_NAME,
