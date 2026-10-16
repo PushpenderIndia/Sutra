@@ -58,6 +58,8 @@ export const pipelineNode = doc({
   tokens: count.default(0),
   costUsd: usd.default(0),
   toolCalls: z.array(z.object({ name: z.string(), at: z.date() })).default([]),
+  /** Live work count: results found so far (`done`), or `done` of `total` for a progress bar. */
+  progress: z.object({ done: count, total: count.optional() }).optional(),
   error: z.string().optional(),
 });
 export type PipelineNode = z.infer<typeof pipelineNode>;

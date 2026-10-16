@@ -45,6 +45,55 @@
       "failed": "विफल",
       "waiting_human": "आपकी प्रतीक्षा में",
       "skipped": "छोड़ा गया"
+    },
+    "title": "एजेंट ग्राफ़",
+    "description": "नवीनतम रन का हर एजेंट और सब-एजेंट, लाइव।",
+    "waiting": "आपका इंतज़ार है",
+    "perSource": "हर स्रोत के लिए एक एजेंट",
+    "fanOutSummary": "{sources, plural, one {# स्रोत} other {# स्रोत}} · {count} मिले",
+    "progress": "{done}/{total}",
+    "found": "{count} मिले",
+    "expand": "एजेंट ग्राफ़ दिखाएँ",
+    "collapse": "एजेंट ग्राफ़ छिपाएँ",
+    "fullScreen": "फ़ुल स्क्रीन",
+    "duration": "अवधि",
+    "tokens": "टोकन",
+    "cost": "लागत",
+    "toolCalls": "हाल के टूल कॉल",
+    "noToolCalls": "अभी तक कोई टूल कॉल नहीं",
+    "viewOutput": "आउटपुट देखें",
+    "openCheckpoint": "चेकपॉइंट पर जाएँ",
+    "rerun": "यहाँ से फिर चलाएँ",
+    "rerunHint": "यह चरण और इसके बाद के सभी चरण फिर से गणना होंगे",
+    "rerunStarted": "फिर से चल रहा है। आगे के चरण ताज़ा होंगे।",
+    "checkpoints": {
+      "checkpoint1": "प्रोफ़ाइल की पुष्टि करें",
+      "checkpoint2": "कैंपेन स्वीकृत करें"
+    },
+    "sub": {
+      "crawler": "क्रॉलर",
+      "webResearch": "वेब रिसर्च",
+      "icpBuilder": "ICP बिल्डर",
+      "profileWriter": "प्रोफ़ाइल लेखक",
+      "contactFinder": "संपर्क खोजक",
+      "researcher": "रिसर्चर",
+      "scorer": "स्कोरर",
+      "sequencePlanner": "सीक्वेंस प्लानर",
+      "variantWriter": "वेरिएंट लेखक",
+      "qualityGate": "क्वालिटी गेट",
+      "compliance": "अनुपालन",
+      "scheduler": "शेड्यूलर",
+      "gmail": "Gmail"
+    },
+    "replay": {
+      "title": "एजेंट ग्राफ़ रीप्ले",
+      "description": "एक रिकॉर्ड किया गया ऑनबोर्डिंग रन, फ़्रेम दर फ़्रेम। एक ही पल हमेशा एक जैसा दिखता है।",
+      "play": "चलाएँ",
+      "pause": "रोकें",
+      "restart": "फिर से शुरू करें",
+      "speed": "गति",
+      "position": "रन में स्थिति",
+      "rerun": "वहाँ पहुँचे जहाँ {agent} शुरू हुआ था"
     }
   },
   "command": {
@@ -226,7 +275,9 @@
     "avgScore": "औसत स्कोर",
     "sourceCount": "{count, plural, one {# स्रोत से} other {# स्रोतों से}}",
     "emptyTitle": "अभी कोई संभावित ग्राहक नहीं",
-    "emptyHint": "व्यवसाय प्रोफ़ाइल की पुष्टि होते ही प्रॉस्पेक्टर कई स्रोतों में एक साथ खोजता है।"
+    "emptyHint": "व्यवसाय प्रोफ़ाइल की पुष्टि होते ही प्रॉस्पेक्टर कई स्रोतों में एक साथ खोजता है।",
+    "sourceFilter": "{source} से मिले",
+    "clearFilter": "सभी स्रोत दिखाएँ"
   },
   "campaigns": {
     "title": "अभियान",

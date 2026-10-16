@@ -190,8 +190,9 @@ function toLlmResponse(
 
 async function* sse(body: ReadableStream<Uint8Array>): AsyncGenerator<Completion> {
   let buffer = '';
-  for await (const chunk of body.pipeThrough(new TextDecoderStream())) {
-    buffer += chunk;
+  const decoder = new TextDecoder();
+  for await (const bytes of body) {
+    buffer += decoder.decode(bytes, { stream: true });
     const lines = buffer.split('\n');
     buffer = lines.pop() ?? '';
     for (const line of lines) {

@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@xyflow/react/dist/base.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -110,6 +111,38 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
   --animate-glow: glow 1.6s ease-in-out infinite;
+  --animate-flash: flash 2.4s ease-out;
+  --animate-pop: pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-shimmer: shimmer 1.4s linear infinite;
+
+  @keyframes flash {
+    0%,
+    30% {
+      background-color: color-mix(in oklch, var(--saffron) 28%, var(--card));
+      box-shadow: 0 0 0 6px color-mix(in oklch, var(--saffron) 30%, transparent);
+    }
+    100% {
+      box-shadow: 0 0 0 0 transparent;
+    }
+  }
+  @keyframes pop {
+    0% {
+      transform: scale(0.4);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      background-position: -150% 0;
+    }
+    100% {
+      background-position: 250% 0;
+    }
+  }
 
   @keyframes glow {
     0%,
@@ -135,5 +168,51 @@
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
+  }
+}
+
+/* Agent graph (React Flow): theme-aware edges; moving dashes only while data flows. */
+.react-flow {
+  --xy-background-color: transparent;
+  --xy-edge-stroke: var(--border);
+  --xy-background-pattern-color: color-mix(in oklch, var(--muted-foreground) 22%, transparent);
+  --xy-attribution-background-color: transparent;
+}
+.react-flow__controls {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+}
+.react-flow__controls-button {
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
+}
+.react-flow__controls-button:last-child {
+  border-bottom: 0;
+}
+.react-flow__controls-button:hover {
+  background: var(--accent);
+}
+.react-flow__attribution a {
+  color: var(--muted-foreground);
+}
+.react-flow__edge-path {
+  stroke-width: 1.5;
+  transition: stroke 0.3s;
+}
+.react-flow__edge.edge-done .react-flow__edge-path {
+  stroke: color-mix(in oklch, var(--muted-foreground) 55%, transparent);
+}
+.react-flow__edge.edge-live .react-flow__edge-path {
+  stroke: var(--saffron);
+  stroke-width: 2;
+}
+.react-flow__edge.edge-idle .react-flow__edge-path {
+  stroke-dasharray: 3 4;
+}
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__edge.animated .react-flow__edge-path {
+    animation: none;
   }
 }

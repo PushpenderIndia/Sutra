@@ -29,8 +29,9 @@ export {
   type NodeResult,
   type Pipeline,
 } from './pipeline/define.ts';
-export { latestRun, resumePipeline, runPipeline } from './pipeline/engine.ts';
-export { nodeScope, PipelineRecorder } from './pipeline/recorder.ts';
+export { latestRun, resumePipeline, runPipeline, runTrigger } from './pipeline/engine.ts';
+export { nodeScope, PipelineRecorder, reportProgress } from './pipeline/recorder.ts';
+export * from './pipeline/topology.ts';
 export * from './prompts/base.ts';
 export {
   AgentOutputError,

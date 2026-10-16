@@ -1,5 +1,5 @@
 'use client';
-import { Building2, Gauge, Mail, Radar, UsersRound } from 'lucide-react';
+import { Building2, Gauge, Mail, Radar, UsersRound, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { columns, DataTable } from '@/components/data-table';
@@ -8,11 +8,14 @@ import { PageHeader } from '@/components/page-header';
 import { StatCards } from '@/components/stat-cards';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import type { ProspectRow } from '@/lib/data/prospects';
 import { regionName } from '@/lib/format';
+import { useUrlState } from '@/lib/use-url-state';
 import { cn } from '@/lib/utils';
 
 const col = columns<ProspectRow>();
+type Source = ProspectRow['sources'][number];
 
 function Score({ value }: { value?: number }) {
   if (value === undefined) return <span className="text-muted-foreground">–</span>;
@@ -29,10 +32,13 @@ function Score({ value }: { value?: number }) {
   );
 }
 
-export function ProspectsView({ rows }: { rows: ProspectRow[] }) {
+export function ProspectsView({ rows: all }: { rows: ProspectRow[] }) {
   const t = useTranslations('prospects');
   const sources = useTranslations('sources');
   const locale = useLocale();
+  // `?source=` comes from the agent graph's "view output" on a prospecting source.
+  const [source, setSource] = useUrlState('source');
+  const rows = source ? all.filter((r) => r.sources.some((s) => s === source)) : all;
 
   const cols = useMemo(
     () =>
@@ -145,6 +151,17 @@ export function ProspectsView({ rows }: { rows: ProspectRow[] }) {
         columns={cols}
         data={rows}
         selectable
+        toolbar={
+          source && (
+            <Button variant="secondary" size="sm" onClick={() => setSource(null)}>
+              {t('sourceFilter', {
+                source: sources.has(source as Source) ? sources(source as Source) : source,
+              })}
+              <X aria-hidden />
+              <span className="sr-only">{t('clearFilter')}</span>
+            </Button>
+          )
+        }
         empty={
           <EmptyState
             icon={Radar}

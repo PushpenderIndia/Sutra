@@ -103,6 +103,7 @@ export class PipelineRecorder extends BasePlugin {
     if (scope)
       await nodes().updateOne(this.key(scope, toolContext.agentName), {
         $push: { toolCalls: { name: tool.name, at: new Date() } },
+        $set: { updatedAt: new Date() },
       });
     return undefined;
   }
@@ -121,8 +122,21 @@ export class PipelineRecorder extends BasePlugin {
     const { nodeId, ...run } = scope;
     await nodes().updateMany(
       { ...run, nodeId: { $in: [nodeId, subNodeId(nodeId, callbackContext.agentName)] } },
-      { $inc: { tokens, costUsd } },
+      { $inc: { tokens, costUsd }, $set: { updatedAt: new Date() } },
     );
     return undefined;
   }
+}
+
+/**
+ * Reports live progress of the running pipeline node (or fan-out child) for the agent graph:
+ * `reportProgress(148)` for "148 found", `reportProgress(87, 148)` for a progress bar.
+ * Outside a pipeline node it does nothing.
+ */
+export async function reportProgress(done: number, total?: number) {
+  const scope = nodeScope.getStore();
+  if (!scope) return;
+  await nodes().updateOne(scope, {
+    $set: { progress: total === undefined ? { done } : { done, total }, updatedAt: new Date() },
+  });
 }

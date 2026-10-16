@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./topology": "./src/pipeline/topology.ts"
   },
   "scripts": {
     "try": "node --conditions=react-server scripts/try.ts",

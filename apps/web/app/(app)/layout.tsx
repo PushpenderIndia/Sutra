@@ -1,4 +1,5 @@
 import { WorkspaceSettings } from '@sutra/db';
+import { hasRole } from '@sutra/domain';
 import { headers } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
 import { Suspense } from 'react';
@@ -10,11 +11,12 @@ import { HtmlLang } from '@/components/shell/preferences';
 import { TabNav } from '@/components/shell/tab-nav';
 import { auth } from '@/lib/auth';
 import { loadLatestRun } from '@/lib/data/pipeline';
+import { graphTopology } from '@/lib/pipeline';
 import { requireWorkspace } from '@/lib/workspace';
 
 /** Every `(app)` page needs a verified session and an active workspace, then gets the shell. */
 async function Shell({ children }: { children: React.ReactNode }) {
-  const { user, workspaceId } = await requireWorkspace();
+  const { user, workspaceId, role } = await requireWorkspace();
   const [run, orgs, settings] = await Promise.all([
     loadLatestRun(workspaceId),
     auth.api.listOrganizations({ headers: await headers() }),
@@ -31,7 +33,16 @@ async function Shell({ children }: { children: React.ReactNode }) {
       <QueryProvider>
         <HtmlLang />
         <AppShell
-          header={<Header user={user} workspace={workspace} workspaces={workspaces} run={run} />}
+          header={
+            <Header
+              user={user}
+              workspace={workspace}
+              workspaces={workspaces}
+              run={run}
+              topology={graphTopology()}
+              canRerun={hasRole(role, 'admin')}
+            />
+          }
           chat={<ChatPanel />}
         >
           <TabNav />

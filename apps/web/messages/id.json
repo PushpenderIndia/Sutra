@@ -45,6 +45,55 @@
       "failed": "gagal",
       "waiting_human": "menunggu Anda",
       "skipped": "dilewati"
+    },
+    "title": "Grafik agen",
+    "description": "Setiap agen dan sub-agen dari proses terbaru, secara langsung.",
+    "waiting": "Menunggu Anda",
+    "perSource": "Satu agen per sumber",
+    "fanOutSummary": "{sources, plural, other {# sumber}} · {count} ditemukan",
+    "progress": "{done}/{total}",
+    "found": "{count} ditemukan",
+    "expand": "Tampilkan grafik agen",
+    "collapse": "Sembunyikan grafik agen",
+    "fullScreen": "Layar penuh",
+    "duration": "Durasi",
+    "tokens": "Token",
+    "cost": "Biaya",
+    "toolCalls": "Panggilan alat terbaru",
+    "noToolCalls": "Belum ada panggilan alat",
+    "viewOutput": "Lihat hasil",
+    "openCheckpoint": "Buka checkpoint",
+    "rerun": "Jalankan ulang dari sini",
+    "rerunHint": "Menghitung ulang langkah ini dan semua langkah sesudahnya",
+    "rerunStarted": "Menjalankan ulang. Langkah berikutnya akan diperbarui.",
+    "checkpoints": {
+      "checkpoint1": "Konfirmasi profil",
+      "checkpoint2": "Setujui kampanye"
+    },
+    "sub": {
+      "crawler": "Crawler",
+      "webResearch": "Riset web",
+      "icpBuilder": "Penyusun ICP",
+      "profileWriter": "Penulis profil",
+      "contactFinder": "Pencari kontak",
+      "researcher": "Peneliti",
+      "scorer": "Penilai",
+      "sequencePlanner": "Perencana urutan",
+      "variantWriter": "Penulis varian",
+      "qualityGate": "Gerbang kualitas",
+      "compliance": "Kepatuhan",
+      "scheduler": "Penjadwal",
+      "gmail": "Gmail"
+    },
+    "replay": {
+      "title": "Putar ulang grafik agen",
+      "description": "Proses onboarding yang direkam, diputar ulang per frame. Momen yang sama selalu tampil sama.",
+      "play": "Putar",
+      "pause": "Jeda",
+      "restart": "Mulai ulang",
+      "speed": "Kecepatan",
+      "position": "Posisi dalam proses",
+      "rerun": "Melompat ke saat {agent} dimulai"
     }
   },
   "command": {
@@ -226,7 +275,9 @@
     "avgScore": "Skor rata-rata",
     "sourceCount": "{count, plural, other {dari # sumber}}",
     "emptyTitle": "Belum ada prospek",
-    "emptyHint": "Setelah profil bisnis dikonfirmasi, prospektor mencari dari beberapa sumber sekaligus."
+    "emptyHint": "Setelah profil bisnis dikonfirmasi, prospektor mencari dari beberapa sumber sekaligus.",
+    "sourceFilter": "Ditemukan via {source}",
+    "clearFilter": "Tampilkan semua sumber"
   },
   "campaigns": {
     "title": "Kampanye",

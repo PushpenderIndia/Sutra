@@ -1,4 +1,5 @@
 'use client';
+import type { Topology } from '@sutra/agents/topology';
 import { LogOut, PanelRight, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -19,7 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Kbd } from '@/components/ui/kbd';
 import { authClient } from '@/lib/auth-client';
-import type { RunView } from '@/lib/data/pipeline';
+import type { RunState } from '@/lib/graph/model';
 import { useShell } from '@/lib/shell';
 
 export type HeaderUser = { name: string; email: string; image?: string | null };
@@ -30,11 +31,15 @@ export function Header({
   workspace,
   workspaces,
   run,
+  topology,
+  canRerun,
 }: {
   user: HeaderUser;
   workspace: WorkspaceOption;
   workspaces: WorkspaceOption[];
-  run: RunView | null;
+  run: RunState | null;
+  topology: Topology;
+  canRerun: boolean;
 }) {
   const t = useTranslations('shell');
   const router = useRouter();
@@ -58,7 +63,7 @@ export function Header({
       <span aria-hidden className="hidden h-5 w-px bg-border sm:block" />
       <WorkspaceSwitcher active={workspace} workspaces={workspaces} />
       <div className="flex min-w-0 flex-1 justify-center px-2">
-        <AgentGraphBar run={run} />
+        <AgentGraphBar run={run} topology={topology} canRerun={canRerun} />
       </div>
       <Button
         variant="outline"

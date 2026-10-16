@@ -7,7 +7,9 @@ import { completion, mockProxy, toolCall } from '../../test/mock-proxy.ts';
 import { defineAgent } from '../agent.ts';
 import { runAgent } from '../run.ts';
 import { definePipeline } from './define.ts';
-import { resumePipeline, runPipeline } from './engine.ts';
+import { resumePipeline, runPipeline, runTrigger } from './engine.ts';
+import { reportProgress } from './recorder.ts';
+import { MAIN_TOPOLOGY, topologyOf } from './topology.ts';
 
 const proxy = await mockProxy();
 const calls: string[] = [];
@@ -155,6 +157,59 @@ describe('pipeline engine', () => {
     const n = await nodeMap(ws, runId);
     expect(n.boom).toMatchObject({ status: 'failed', error: 'source unavailable' });
     expect(n.last?.status).toBe('queued');
+  });
+
+  it('records live progress and event-driven trigger runs on the latest run', async () => {
+    const ws = newId();
+    const live = definePipeline(
+      {
+        sources: {
+          label: 'Sources',
+          fanOut: () => ['search'],
+          run: async () => {
+            await reportProgress(12);
+            await reportProgress(148);
+            return { summary: '148 companies' };
+          },
+        },
+        scorer: {
+          label: 'Scorer',
+          after: ['sources'],
+          run: async () => {
+            await reportProgress(87, 148);
+            return undefined;
+          },
+        },
+        replies: {
+          label: 'Reply analyst',
+          trigger: 'reply.received',
+          run: async ({ item }) => ({ summary: `meeting_request from ${item}` }),
+        },
+      },
+      { name: 'live' },
+    );
+    expect(await runTrigger(live, ws, 'replies', 'Acme')).toEqual({
+      summary: 'meeting_request from Acme',
+    });
+    const runId = await runPipeline(live, ws);
+    const before = await nodeMap(ws, runId);
+    expect(before['sources.search']).toMatchObject({ progress: { done: 148 } });
+    expect(before.scorer).toMatchObject({ progress: { done: 87, total: 148 } });
+    expect(before.replies).toBeUndefined();
+
+    await runTrigger(live, ws, 'replies', 'Kopi Kenangan');
+    const fired = (await nodeMap(ws, runId)).replies;
+    expect(fired).toMatchObject({ status: 'done', summary: 'meeting_request from Kopi Kenangan' });
+    expect(fired?.updatedAt.getTime()).toBeGreaterThan(before.scorer?.updatedAt.getTime() ?? 0);
+    await expect(runTrigger(live, ws, 'scorer')).rejects.toThrow(/not a trigger/);
+  });
+
+  it('exposes a JSON-safe topology without run functions', () => {
+    const t = topologyOf(fake);
+    expect(t.writer).toEqual({ label: 'Writer', after: ['checkpoint'], fanOut: true });
+    expect(t.replies).toEqual({ label: 'Reply analyst', trigger: 'reply.received' });
+    expect(JSON.parse(JSON.stringify(t))).toEqual(t);
+    expect(topologyOf({ nodes: MAIN_TOPOLOGY })).toEqual(MAIN_TOPOLOGY);
   });
 
   it('rejects invalid definitions', () => {

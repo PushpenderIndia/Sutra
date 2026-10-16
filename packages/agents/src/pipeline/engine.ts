@@ -1,4 +1,4 @@
-import { PipelineNodes, PipelineRuns } from '@sutra/db';
+import { newId, PipelineNodes, PipelineRuns } from '@sutra/db';
 import type { Id, PipelineNodeStatus, PipelineRunStatus } from '@sutra/domain';
 import { defineJob, dispatch } from '../jobs.ts';
 import { getPipeline, type NodeContext, type Pipeline } from './define.ts';
@@ -164,7 +164,7 @@ export async function runPipeline<K extends string>(p: Pipeline<K>, workspaceId:
       { workspaceId, runId, nodeId: { $in: reset } },
       {
         $set: { status: 'queued', tokens: 0, costUsd: 0, toolCalls: [], updatedAt: new Date() },
-        $unset: { summary: '', error: '', startedAt: '', endedAt: '' },
+        $unset: { summary: '', error: '', startedAt: '', endedAt: '', progress: '' },
       },
     );
     await PipelineRuns.update(workspaceId, runId, { status: 'running', from, endedAt: undefined });
@@ -199,4 +199,41 @@ export async function resumePipeline<K extends string>(
     throw new Error(`Pipeline node "${nodeId}" is not waiting for a person`);
   await advance(p as Pipeline, workspaceId, run._id);
   return run._id;
+}
+
+/**
+ * Runs an event-driven node (`trigger`, e.g. the reply analyst on `reply.received`) and records
+ * it on the latest run, so the agent graph flashes it with its summary. Returns the result.
+ */
+export async function runTrigger<K extends string>(
+  p: Pipeline<K>,
+  workspaceId: Id,
+  nodeId: K,
+  item?: string,
+) {
+  const def = p.nodes[nodeId];
+  const exec = def?.trigger ? def.run : undefined;
+  if (!exec) throw new Error(`"${nodeId}" is not a trigger node`);
+  const run = await latestRun(workspaceId);
+  const ctx: NodeContext = { workspaceId, runId: run?._id ?? '', nodeId, ...(item && { item }) };
+  if (!run) return exec(ctx);
+  const key = { workspaceId, runId: run._id, nodeId };
+  const now = new Date();
+  await nodes().updateOne(
+    key,
+    {
+      $set: { status: 'running', startedAt: now, updatedAt: now, toolCalls: [] },
+      $unset: { endedAt: '', summary: '', error: '' },
+      $setOnInsert: { _id: newId(), agent: nodeId, tokens: 0, costUsd: 0, createdAt: now },
+    },
+    { upsert: true },
+  );
+  try {
+    const result = await nodeScope.run(key, () => exec(ctx));
+    await move(key, 'running', 'done', result?.summary ? { summary: result.summary } : {});
+    return result;
+  } catch (error) {
+    await move(key, 'running', 'failed', { error: (error as Error).message });
+    throw error;
+  }
 }

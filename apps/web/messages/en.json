@@ -45,6 +45,55 @@
       "failed": "failed",
       "waiting_human": "waiting for you",
       "skipped": "skipped"
+    },
+    "title": "Agent graph",
+    "description": "Every agent and sub-agent of the latest run, live.",
+    "waiting": "Waiting for you",
+    "perSource": "One agent per source",
+    "fanOutSummary": "{sources, plural, one {# source} other {# sources}} · {count} found",
+    "progress": "{done}/{total}",
+    "found": "{count} found",
+    "expand": "Show agent graph",
+    "collapse": "Hide agent graph",
+    "fullScreen": "Full screen",
+    "duration": "Duration",
+    "tokens": "Tokens",
+    "cost": "Cost",
+    "toolCalls": "Recent tool calls",
+    "noToolCalls": "No tool calls yet",
+    "viewOutput": "View output",
+    "openCheckpoint": "Go to checkpoint",
+    "rerun": "Re-run from here",
+    "rerunHint": "Recomputes this step and everything after it",
+    "rerunStarted": "Re-running. Later steps will refresh.",
+    "checkpoints": {
+      "checkpoint1": "Confirm profile",
+      "checkpoint2": "Approve campaign"
+    },
+    "sub": {
+      "crawler": "Crawler",
+      "webResearch": "Web research",
+      "icpBuilder": "ICP builder",
+      "profileWriter": "Profile writer",
+      "contactFinder": "Contact finder",
+      "researcher": "Researcher",
+      "scorer": "Scorer",
+      "sequencePlanner": "Sequence planner",
+      "variantWriter": "Variant writer",
+      "qualityGate": "Quality gate",
+      "compliance": "Compliance",
+      "scheduler": "Scheduler",
+      "gmail": "Gmail"
+    },
+    "replay": {
+      "title": "Agent graph replay",
+      "description": "A recorded onboarding run, replayed frame by frame. The same moment always renders the same way.",
+      "play": "Play",
+      "pause": "Pause",
+      "restart": "Restart",
+      "speed": "Speed",
+      "position": "Position in the run",
+      "rerun": "Jumped to where {agent} started"
     }
   },
   "command": {
@@ -226,7 +275,9 @@
     "avgScore": "Average score",
     "sourceCount": "{count, plural, one {from # source} other {from # sources}}",
     "emptyTitle": "No prospects yet",
-    "emptyHint": "Once you confirm your business profile, the prospector searches several sources in parallel."
+    "emptyHint": "Once you confirm your business profile, the prospector searches several sources in parallel.",
+    "sourceFilter": "Found via {source}",
+    "clearFilter": "Show all sources"
   },
   "campaigns": {
     "title": "Campaigns",

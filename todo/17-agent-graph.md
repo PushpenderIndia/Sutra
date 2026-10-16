@@ -32,11 +32,11 @@ The client polls every 1.5s while the run is active and every 10s when idle (fre
 `replyAnalyst` and `optimizer` aren't part of the linear run. They show as side nodes that flash briefly whenever they fire ("Reply Analyst: meeting_request from Kopi Kenangan").
 
 ## Tasks
-- [ ] Pipeline state endpoint (diff since timestamp)
-- [ ] `<AgentGraphBar>` collapsed + expanded views with React Flow + dagre
-- [ ] Node popover with re-run
-- [ ] Animations (pulse, edge flow, completion) respecting `prefers-reduced-motion`
-- [ ] A Storybook-style fixture page that replays a recorded run (for demos and for testing visuals)
+- [x] Pipeline state endpoint (diff since timestamp)
+- [x] `<AgentGraphBar>` collapsed + expanded views with React Flow + dagre
+- [x] Node popover with re-run
+- [x] Animations (pulse, edge flow, completion) respecting `prefers-reduced-motion`
+- [x] A Storybook-style fixture page that replays a recorded run (for demos and for testing visuals)
 
 ## Acceptance criteria
 - Starting onboarding with a URL shows the Profiler and its sub-agents running within 1s

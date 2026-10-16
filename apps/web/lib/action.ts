@@ -102,18 +102,24 @@ export function userAction<I extends z.ZodType, O>(
 }
 
 /**
- * `action()` for route handlers. Input comes from the query string (GET, HEAD) or the JSON
- * body; the result is JSON (or the handler's own `Response`), errors map to HTTP statuses.
+ * `action()` for route handlers. Input is the dynamic route params plus the query string (GET,
+ * HEAD) or the JSON body; the result is JSON (or the handler's own `Response`), errors map to
+ * HTTP statuses.
  */
 export function route<I extends z.ZodType, O>(
   input: I,
   handler: (ctx: Context, data: z.infer<I>) => Promise<O>,
   opts: { role?: Role } = {},
 ) {
-  return async (request: Request): Promise<Response> => {
-    const raw = ['GET', 'HEAD'].includes(request.method)
+  return async (
+    request: Request,
+    segment?: { params?: Promise<Record<string, string | string[]>> },
+  ): Promise<Response> => {
+    const body = ['GET', 'HEAD'].includes(request.method)
       ? Object.fromEntries(new URL(request.url).searchParams)
       : await request.json().catch(() => undefined);
+    const params = await segment?.params;
+    const raw = params ? { ...(body as object), ...params } : body;
     const result = await run(request.headers, opts.role, input, raw, handler);
     if (!result.ok)
       return Response.json(
