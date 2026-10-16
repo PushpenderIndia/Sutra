@@ -51,8 +51,8 @@ describe('tab loaders on the demo seed', () => {
   it('thread: outbound and inbound in order, with the analysis', async () => {
     const lead = (await loadLeads(ws)).find((r) => r.intent);
     const thread = await loadThread(ws, lead?.id ?? '');
-    expect(thread.at(0)?.direction).toBe('outbound');
-    expect(thread.at(-1)).toMatchObject({
+    expect(thread.messages.at(0)?.direction).toBe('outbound');
+    expect(thread.messages.at(-1)).toMatchObject({
       direction: 'inbound',
       analysis: { intent: lead?.intent },
     });

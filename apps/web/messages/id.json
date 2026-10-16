@@ -367,6 +367,18 @@
     "updated": "Diperbarui",
     "emptyTitle": "Belum ada lead",
     "emptyHint": "Orang akan muncul di sini setelah email pertama dikirim.",
-    "meeting": "Rapat pada {at}"
+    "meeting": "Rapat pada {at}",
+    "joinMeeting": "Gabung",
+    "draftTitle": "Draf balasan",
+    "draftHint": "Tinjau dan setujui sebelum dikirim. Tidak ada yang dikirim otomatis.",
+    "approveSend": "Setujui & kirim",
+    "approved": "Balasan terkirim",
+    "save": "Simpan",
+    "saved": "Draf disimpan",
+    "discard": "Buang",
+    "discarded": "Draf dibuang",
+    "book": "Jadwalkan rapat",
+    "booking": "Menjadwalkan…",
+    "booked": "Rapat dijadwalkan"
   }
 }

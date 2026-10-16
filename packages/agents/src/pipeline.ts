@@ -4,6 +4,7 @@ import { runEnricher } from './enricher/run.ts';
 import { definePipeline } from './pipeline/define.ts';
 import { runProfiler } from './profiler/run.ts';
 import { enabledProspectorSources, runProspectorSource } from './prospector/run.ts';
+import { runReplyAnalyst } from './reply/run.ts';
 
 /**
  * The human checkpoint-1 node id (`you confirm profile`); resumed when the user confirms.
@@ -78,6 +79,13 @@ export const mainPipeline = definePipeline(
         const enrolled = await enrollApprovedCampaigns(workspaceId);
         return { summary: enrolled ? `${enrolled} contacts enrolled` : 'No one to enrol' };
       },
+    },
+    // Event-driven (PR 17 trigger node): on each inbound reply, understand it in any language and
+    // run the deterministic action map (stop/pause, status, suppress, draft a reply, book a meeting).
+    replyAnalyst: {
+      label: 'Reply Analyst',
+      trigger: 'reply.received',
+      run: runReplyAnalyst,
     },
   },
   { name: 'main' },

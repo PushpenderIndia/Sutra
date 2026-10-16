@@ -8,7 +8,7 @@ import {
   Messages,
   Replies,
 } from '@sutra/db';
-import type { Id } from '@sutra/domain';
+import type { Id, Locale, ReplyIntent } from '@sutra/domain';
 import { variantLetter } from '@/lib/data/campaigns';
 import { bucketOf, LEAD_STATUSES } from '@/lib/leads';
 
@@ -23,7 +23,7 @@ export async function loadLeads(workspaceId: Id) {
   );
   const ids = contacts.map((c) => c._id);
   const inContacts = { contactId: { $in: ids } };
-  const [companies, replies, enrollments, meetings, campaigns] = await Promise.all([
+  const [companies, replies, enrollments, meetings, campaigns, drafts] = await Promise.all([
     Companies.find(
       workspaceId,
       { _id: { $in: [...new Set(contacts.map((c) => c.companyId))] } },
@@ -33,7 +33,13 @@ export async function loadLeads(workspaceId: Id) {
     Enrollments.find(workspaceId, inContacts, { sort: { createdAt: -1 } }),
     Meetings.find(workspaceId, inContacts, { sort: { startsAt: 1 } }),
     Campaigns.find(workspaceId, {}, { projection: { steps: 1 } }),
+    Messages.find(
+      workspaceId,
+      { ...inContacts, direction: 'outbound', status: 'draft' },
+      { projection: { contactId: 1 } },
+    ),
   ]);
+  const hasDraft = new Set(drafts.map((d) => d.contactId));
   const first = <T extends { contactId: Id }>(docs: T[]) => {
     const map = new Map<Id, T>();
     for (const d of docs) if (!map.has(d.contactId)) map.set(d.contactId, d);
@@ -68,24 +74,41 @@ export async function loadLeads(workspaceId: Id) {
       step: step === undefined ? undefined : step + 1,
       variant: index === undefined ? undefined : variantLetter(index),
       meetingAt: meeting.get(c._id)?.startsAt.toISOString(),
+      hasDraft: hasDraft.has(c._id),
       updatedAt: c.updatedAt.toISOString(),
     };
   });
 }
 export type LeadRow = Awaited<ReturnType<typeof loadLeads>>[number];
 
-/** One contact's email thread, oldest first, with the reply analysis for inbound messages. */
+/** One email in a lead's thread, with the reply analysis for inbound messages. */
+export interface ThreadMessage {
+  id: Id;
+  direction: 'inbound' | 'outbound';
+  subject: string;
+  body: string;
+  at: string;
+  analysis?: { intent: ReplyIntent; summary: string; language: Locale };
+}
+
+/**
+ * A lead's full conversation for the side sheet: the sent/received thread (with per-reply analysis),
+ * the drafted reply awaiting approval, and the booked meeting — plus whether a meeting can be booked.
+ */
 export async function loadThread(workspaceId: Id, contactId: Id) {
-  const [messages, replies] = await Promise.all([
+  const [contact, messages, replies, draft, meeting] = await Promise.all([
+    Contacts.get(workspaceId, contactId),
     Messages.find(
       workspaceId,
       { contactId, status: { $in: ['sent', 'received', 'bounced'] } },
       { sort: { createdAt: 1 } },
     ),
     Replies.find(workspaceId, { contactId }),
+    Messages.findOne(workspaceId, { contactId, direction: 'outbound', status: 'draft' }),
+    Meetings.findOne(workspaceId, { contactId }),
   ]);
   const analysis = new Map(replies.map((r) => [r.messageId, r]));
-  return messages.map((m) => {
+  const thread: ThreadMessage[] = messages.map((m) => {
     const a = analysis.get(m._id);
     return {
       id: m._id,
@@ -96,5 +119,16 @@ export async function loadThread(workspaceId: Id, contactId: Id) {
       analysis: a && { intent: a.intent, summary: a.summaryEn, language: a.language },
     };
   });
+  const canBook = !meeting && (contact?.status === 'interested' || contact?.status === 'engaged');
+  return {
+    messages: thread,
+    draft: draft && { id: draft._id, subject: draft.subject, body: draft.body },
+    meeting: meeting && {
+      startsAt: meeting.startsAt.toISOString(),
+      meetUrl: meeting.meetUrl,
+      timezone: meeting.timezone,
+    },
+    canBook,
+  };
 }
-export type ThreadMessage = Awaited<ReturnType<typeof loadThread>>[number];
+export type LeadThread = Awaited<ReturnType<typeof loadThread>>;

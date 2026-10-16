@@ -1,8 +1,25 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
-import { CalendarCheck, Clock, Hourglass, Inbox, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  CalendarCheck,
+  CalendarPlus,
+  Clock,
+  Hourglass,
+  Inbox,
+  Send,
+  ThumbsDown,
+  ThumbsUp,
+  Video,
+} from 'lucide-react';
 import { useFormatter, useNow, useTranslations } from 'next-intl';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
+import { toast } from 'sonner';
+import {
+  approveReplyDraft,
+  bookSuggestedMeeting,
+  discardReplyDraft,
+  editReplyDraft,
+} from '@/actions/leads';
 import { columns, DataTable } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { LiveDot } from '@/components/live-dot';
@@ -10,6 +27,7 @@ import { PageHeader } from '@/components/page-header';
 import { StatCards, type StatItem } from '@/components/stat-cards';
 import { StatusBadge } from '@/components/status-badge';
 import { Thread } from '@/components/thread';
+import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
@@ -18,7 +36,8 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { LeadRow, ThreadMessage } from '@/lib/data/leads';
+import { Textarea } from '@/components/ui/textarea';
+import type { LeadRow, LeadThread } from '@/lib/data/leads';
 import { HOT_RANK, LEAD_BUCKETS, type LeadBucket } from '@/lib/leads';
 import { useSelection } from '@/lib/selection';
 import type { Tone } from '@/lib/tones';
@@ -169,11 +188,14 @@ export function LeadsView({ initial }: { initial: LeadRow[] }) {
 function LeadSheet({ lead }: { lead: LeadRow }) {
   const t = useTranslations('leads');
   const format = useFormatter();
+  const queryClient = useQueryClient();
   const url = `/api/leads/thread?contactId=${lead.id}`;
   const { data } = useQuery({
     queryKey: [url],
-    queryFn: async ({ signal }) => (await (await fetch(url, { signal })).json()) as ThreadMessage[],
+    queryFn: async ({ signal }) => (await (await fetch(url, { signal })).json()) as LeadThread,
   });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: [url] });
+
   return (
     <>
       <SheetHeader className="border-b pr-12">
@@ -185,21 +207,35 @@ function LeadSheet({ lead }: { lead: LeadRow }) {
           <StatusBadge status={lead.status} />
           {lead.intent && <StatusBadge status={lead.intent} />}
         </div>
-        {lead.meetingAt && (
-          <p className="flex items-center gap-1.5 pt-2 text-saffron-ink">
+        {data?.meeting ? (
+          <p className="flex flex-wrap items-center gap-1.5 pt-2 text-saffron-ink">
             <CalendarCheck aria-hidden className="size-4" />
             {t('meeting', {
-              at: format.dateTime(new Date(lead.meetingAt), {
+              at: format.dateTime(new Date(data.meeting.startsAt), {
                 dateStyle: 'medium',
                 timeStyle: 'short',
               }),
             })}
+            <a
+              href={data.meeting.meetUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 underline"
+            >
+              <Video aria-hidden className="size-3.5" />
+              {t('joinMeeting')}
+            </a>
           </p>
+        ) : (
+          data?.canBook && <BookMeeting contactId={lead.id} onBooked={refresh} />
         )}
       </SheetHeader>
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {data ? (
-          <Thread messages={data} />
+          <div className="flex flex-col gap-4">
+            {data.draft && <DraftReply draft={data.draft} onChange={refresh} />}
+            <Thread messages={data.messages} />
+          </div>
         ) : (
           <div className="flex flex-col gap-3" aria-busy="true">
             <Skeleton className="ml-auto h-24 w-4/5" />
@@ -208,5 +244,101 @@ function LeadSheet({ lead }: { lead: LeadRow }) {
         )}
       </div>
     </>
+  );
+}
+
+/** The drafted reply awaiting a person's approval: edit it, then approve (send) or discard. */
+function DraftReply({
+  draft,
+  onChange,
+}: {
+  draft: NonNullable<LeadThread['draft']>;
+  onChange: () => void;
+}) {
+  const t = useTranslations('leads');
+  const [body, setBody] = useState(draft.body);
+  const [pending, start] = useTransition();
+
+  const run = (fn: () => Promise<{ ok: boolean; error?: string }>, ok: string) =>
+    start(async () => {
+      const res = await fn();
+      if (!res.ok) toast.error(res.error ?? 'Something went wrong');
+      else {
+        toast.success(ok);
+        onChange();
+      }
+    });
+
+  return (
+    <section className="rounded-xl border border-saffron-ink/30 bg-saffron-ink/5 p-3">
+      <header className="mb-2 flex items-center justify-between">
+        <h3 className="flex items-center gap-1.5 text-sm font-medium">
+          <Send aria-hidden className="size-3.5" />
+          {t('draftTitle')}
+        </h3>
+        <StatusBadge status="pending_approval" />
+      </header>
+      <p className="mb-2 text-xs text-muted-foreground">{t('draftHint')}</p>
+      <p className="mb-1 text-xs font-medium text-muted-foreground">{draft.subject}</p>
+      <Textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={6}
+        className="mb-2 bg-background"
+        aria-label={t('draftTitle')}
+      />
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          disabled={pending}
+          onClick={() => run(() => approveReplyDraft({ messageId: draft.id }), t('approved'))}
+        >
+          {t('approveSend')}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={pending || body === draft.body || !body.trim()}
+          onClick={() => run(() => editReplyDraft({ messageId: draft.id, body }), t('saved'))}
+        >
+          {t('save')}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={pending}
+          onClick={() => run(() => discardReplyDraft({ messageId: draft.id }), t('discarded'))}
+        >
+          {t('discard')}
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+/** Books the next free slot for an interested lead. */
+function BookMeeting({ contactId, onBooked }: { contactId: string; onBooked: () => void }) {
+  const t = useTranslations('leads');
+  const [pending, start] = useTransition();
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="mt-2 w-fit"
+      disabled={pending}
+      onClick={() =>
+        start(async () => {
+          const res = await bookSuggestedMeeting({ contactId });
+          if (!res.ok) toast.error(res.error);
+          else {
+            toast.success(t('booked'));
+            onBooked();
+          }
+        })
+      }
+    >
+      <CalendarPlus aria-hidden className="size-4" />
+      {pending ? t('booking') : t('book')}
+    </Button>
   );
 }

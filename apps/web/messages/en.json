@@ -367,6 +367,18 @@
     "updated": "Updated",
     "emptyTitle": "No leads yet",
     "emptyHint": "People appear here once the first emails are sent.",
-    "meeting": "Meeting on {at}"
+    "meeting": "Meeting on {at}",
+    "joinMeeting": "Join",
+    "draftTitle": "Drafted reply",
+    "draftHint": "Review and approve before it's sent. Nothing is sent automatically.",
+    "approveSend": "Approve & send",
+    "approved": "Reply sent",
+    "save": "Save",
+    "saved": "Draft saved",
+    "discard": "Discard",
+    "discarded": "Draft discarded",
+    "book": "Book meeting",
+    "booking": "Booking…",
+    "booked": "Meeting booked"
   }
 }

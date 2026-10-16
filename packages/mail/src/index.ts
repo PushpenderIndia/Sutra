@@ -5,6 +5,16 @@ import 'server-only';
  * follow-ups, tracks opens and clicks, and syncs replies and bounces from Gmail push.
  */
 export {
+  CALENDAR_API,
+  type CalendarClient,
+  type CalendarEvent,
+  type CalendarEventInput,
+  calendarFor,
+  fakeCalendarClient,
+  googleCalendarClient,
+  type Interval,
+} from './calendar.ts';
+export {
   type CheckStatus,
   type Deliverability,
   type DnsCheck,
@@ -33,6 +43,7 @@ export {
 } from './mailbox.ts';
 export { buildMime, type Mime } from './mime.ts';
 export { contentIssues, linksIn, MAX_LINKS, render } from './render.ts';
+export { type SendReplyOptions, sendReply } from './reply-send.ts';
 export {
   type DeliverOptions,
   type DeliverResult,

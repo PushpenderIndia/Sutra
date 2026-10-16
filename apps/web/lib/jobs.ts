@@ -5,13 +5,15 @@ import {
   enqueue,
   handleJob,
   type JobPayload,
+  runTrigger,
   setJobDispatcher,
   sweepDueEnrollments,
 } from '@sutra/agents';
 import { env } from '@sutra/config';
 import { Enrollments, Messages, retentionSweep } from '@sutra/db';
-import { deliver, renewWatches } from '@sutra/mail';
+import { deliver, onReply, renewWatches } from '@sutra/mail';
 import { CloudTasksDispatcher } from './cloud-tasks';
+import { mainPipeline } from './pipeline';
 
 /**
  * One place where every background job is registered and the driver chosen. The pipeline engine and
@@ -61,6 +63,17 @@ let installed = false;
 export function installJobs() {
   if (installed) return;
   installed = true;
+
+  // Each new reply (from Gmail push or the FAKE_MAIL simulator) runs the reply-analyst trigger node,
+  // so it understands the reply and runs the action map, and the live agent graph flashes the node.
+  const pipeline = mainPipeline();
+  if (pipeline)
+    onReply((reply) =>
+      runTrigger(pipeline, reply.workspaceId, 'replyAnalyst', reply._id).catch((error) =>
+        console.error('reply analyst', error),
+      ),
+    );
+
   if (env.JOBS_DRIVER === 'cloud-tasks')
     setJobDispatcher(
       new CloudTasksDispatcher({

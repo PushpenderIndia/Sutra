@@ -168,6 +168,9 @@ importers:
       '@sutra/domain':
         specifier: workspace:*
         version: link:../domain
+      '@sutra/mail':
+        specifier: workspace:*
+        version: link:../mail
       '@sutra/sources':
         specifier: workspace:*
         version: link:../sources

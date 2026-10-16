@@ -19,6 +19,7 @@
     "@sutra/config": "workspace:*",
     "@sutra/db": "workspace:*",
     "@sutra/domain": "workspace:*",
+    "@sutra/mail": "workspace:*",
     "@sutra/sources": "workspace:*",
     "linkedom": "0.18.13",
     "zod": "4.6.7",
