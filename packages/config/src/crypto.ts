@@ -1,4 +1,10 @@
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from 'node:crypto';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_BYTES = 12;
@@ -46,6 +52,32 @@ export function createCipher(keyring: string): Cipher {
         decipher.update(payload.subarray(IV_BYTES + TAG_BYTES)),
         decipher.final(),
       ]).toString('utf8');
+    },
+  };
+}
+
+export interface Signer {
+  /** `base64url(payload).base64url(hmac)`: URL-safe, tamper-evident, not secret. */
+  sign(payload: string): string;
+  /** The payload, or `null` if the token was tampered with or signed with another secret. */
+  verify(token: string): string | null;
+}
+
+/** HMAC-SHA256 tokens for public links (unsubscribe, tracking). */
+export function createSigner(secret: string): Signer {
+  const mac = (body: string) => createHmac('sha256', secret).update(body).digest('base64url');
+  return {
+    sign(payload) {
+      const body = Buffer.from(payload, 'utf8').toString('base64url');
+      return `${body}.${mac(body)}`;
+    },
+    verify(token) {
+      const [body = '', sig = '', ...rest] = token.split('.');
+      const given = Buffer.from(sig);
+      const expected = Buffer.from(mac(body));
+      const valid =
+        !rest.length && given.length === expected.length && timingSafeEqual(given, expected);
+      return valid ? Buffer.from(body, 'base64url').toString('utf8') : null;
     },
   };
 }

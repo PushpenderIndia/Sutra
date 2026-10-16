@@ -1,5 +1,5 @@
 import 'server-only';
-import { createCipher } from './crypto.ts';
+import { createCipher, createSigner } from './crypto.ts';
 import { loadSource } from './load.ts';
 import { type EnvSource, parse } from './parse.ts';
 import { serverSchema } from './schema.ts';
@@ -25,4 +25,8 @@ export type Env = typeof env;
 /** AES-256-GCM for tenant secrets, keyed by `ENCRYPTION_KEY`. */
 export const { encrypt, decrypt } = createCipher(env.ENCRYPTION_KEY);
 
+/** HMAC-signed public link tokens, keyed by `TRACKING_SECRET`. */
+export const { sign, verify } = createSigner(env.TRACKING_SECRET);
+
+export { createSigner, type Signer } from './crypto.ts';
 export { EnvError } from './parse.ts';

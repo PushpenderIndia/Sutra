@@ -12,6 +12,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@sutra/compliance": "workspace:*",
     "@sutra/config": "workspace:*",
     "@sutra/domain": "workspace:*",
     "mongodb": "7.7.0",

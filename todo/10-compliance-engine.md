@@ -65,13 +65,15 @@ Packs at launch: **SG, IN, ID, PH, MY, TH, VN, JP, AU, DEFAULT** (DEFAULT is the
 - Settings: active packs, stricter-only overrides, suppression list
 
 ## Tasks
-- [ ] `check()` + types + packs
-- [ ] `optOut()` + unsubscribe page
-- [ ] Export / erase / retention
-- [ ] Settings UI + Prospects column
-- [ ] Table-driven tests: at least 40 cases (send windows across timezones, DST in AU, caps, free-mail detection, suppression)
+- [x] `check()` + types + packs
+- [x] `optOut()` + unsubscribe page (`/u/[token]` confirm page + RFC 8058 one-click `POST /u/[token]/one-click`)
+- [x] Export / erase / retention (`exportContact`, `eraseContact`, `retentionSweep` in `@sutra/db`)
+- [ ] Settings UI + Prospects column — **deferred until the app shell (PR 05)**. The server side is ready: `PACKS` (also at `@sutra/compliance/packs` for client components), the `packOverride` schema for validating stricter-only overrides, `statusOf()` for the column and `summarize()` for the Checkpoint 2 line. The Export / Erase buttons on a contact go with this UI too.
+- [x] Table-driven tests: at least 40 cases (send windows across timezones, DST in AU, caps, free-mail detection, suppression)
+
+> Notes: `check()` also takes `domainSends` (for the per-domain cap) and `mailboxDay` (for the warm-up ramp), and returns `pack` alongside `packVersion`. `checkFor(workspaceId, contactId, { at?, actor? })` audits only when an `actor` is passed (a send attempt); dry runs aren't audited. `retentionSweep` is ready for the `maintenance` cron when that cron lands. Docs: [`docs/compliance.md`](../docs/compliance.md).
 
 ## Acceptance criteria
-- 100% branch coverage on `packages/compliance`
-- The Gmail send function only accepts an `AllowDecision` (enforced by type)
-- Opt-out stops all future sends within one job cycle
+- [x] 100% branch coverage on `packages/compliance` (enforced by `pnpm test --coverage` in CI)
+- [x] The Gmail send function only accepts an `AllowDecision` (enforced by type): `AllowDecision` is branded and only `check()` creates one; PR 11's `send()` takes it as a parameter
+- [x] Opt-out stops all future sends within one job cycle (enrollments stopped, unsent messages cancelled, and `checkFor()` refuses anything in flight)

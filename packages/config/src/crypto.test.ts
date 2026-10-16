@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { createCipher } from './crypto.ts';
+import { createCipher, createSigner } from './crypto.ts';
 
 const key = () => randomBytes(32).toString('base64');
 const v1 = `v1:${key()}`;
@@ -39,5 +39,24 @@ describe('createCipher', () => {
 
   it('rejects keys that are not 32 bytes', () => {
     expect(() => createCipher('v1:c2hvcnQ=')).toThrow('32 bytes');
+  });
+});
+
+describe('createSigner', () => {
+  const { sign, verify } = createSigner('a'.repeat(32));
+
+  it('round-trips URL-safe tokens', () => {
+    const token = sign('{"w":"1","c":"2"} ✓');
+    expect(token).toMatch(/^[\w-]+\.[\w-]+$/);
+    expect(verify(token)).toBe('{"w":"1","c":"2"} ✓');
+  });
+
+  it('rejects tampered, foreign and malformed tokens', () => {
+    const token = sign('payload');
+    expect(verify(`${sign('other').split('.')[0]}.${token.split('.')[1]}`)).toBeNull();
+    expect(verify(createSigner('b'.repeat(32)).sign('payload'))).toBeNull();
+    expect(verify(`${token}.x`)).toBeNull();
+    expect(verify('nonsense')).toBeNull();
+    expect(verify('')).toBeNull();
   });
 });

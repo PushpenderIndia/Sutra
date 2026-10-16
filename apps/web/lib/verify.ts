@@ -1,6 +1,5 @@
 import 'server-only';
-import { createHmac, timingSafeEqual } from 'node:crypto';
-import { env } from '@sutra/config';
+import { createSigner, env } from '@sutra/config';
 import { createRemoteJWKSet, type JWTVerifyGetKey, jwtVerify } from 'jose';
 
 /**
@@ -43,13 +42,9 @@ export async function verifyGoogleOidc(
   }
 }
 
-const mac = (payload: string, secret: string) =>
-  createHmac('sha256', secret).update(payload).digest('base64url');
-
 /** A URL-safe `payload.signature` token (open/click/unsubscribe links), keyed by `TRACKING_SECRET`. */
 export function signToken(data: Record<string, unknown>, secret = env.TRACKING_SECRET) {
-  const payload = Buffer.from(JSON.stringify(data)).toString('base64url');
-  return `${payload}.${mac(payload, secret)}`;
+  return createSigner(secret).sign(JSON.stringify(data));
 }
 
 /** The data inside a `signToken()` token. Throws on any tampering. */
@@ -57,11 +52,7 @@ export function verifyToken<T = Record<string, unknown>>(
   token: string,
   secret = env.TRACKING_SECRET,
 ): T {
-  const [payload = '', signature = ''] = token.split('.');
-  const expected = Buffer.from(mac(payload, secret));
-  const actual = Buffer.from(signature);
-  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
-    throw new VerificationError('Bad signature');
-  }
-  return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as T;
+  const payload = createSigner(secret).verify(token);
+  if (payload === null) throw new VerificationError('Bad signature');
+  return JSON.parse(payload) as T;
 }

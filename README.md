@@ -25,7 +25,7 @@ pnpm dev                     # http://localhost:3000
 | `pnpm build` | Production build |
 | `pnpm lint` / `pnpm format` | Biome check / fix |
 | `pnpm typecheck` | TypeScript across every workspace |
-| `pnpm test` | Vitest across every workspace (DB tests use an in-memory MongoDB) |
+| `pnpm test` | Vitest across every workspace (DB tests use an in-memory MongoDB); `pnpm test --coverage` enforces 100% on `packages/compliance` |
 | `pnpm db:migrate` | Create collections with Zod-generated `$jsonSchema` validators and indexes (idempotent) |
 | `pnpm db:seed --demo [--owner=you@example.com]` | Reset the demo workspace to a mid-campaign state; `--owner` (a user who has signed in once) makes you its owner |
 | `pnpm secrets:pull` / `push` / `check` / `example` | Manage the `SUTRA_ENV` secret ([docs/secrets.md](docs/secrets.md)) |
@@ -46,7 +46,7 @@ packages/db         MongoDB client and repositories
 packages/agents     ADK agents, tools, prompts, pipeline
 packages/sources    lead sources
 packages/mail       Gmail send, threading, tracking
-packages/compliance policy engine + country rule packs
+packages/compliance policy engine + country rule packs (docs/compliance.md)
 ```
 
 Internal packages export TypeScript source directly (no build step); the app compiles them via `transpilePackages`. The build plan lives in [`todo/`](todo/README.md).
