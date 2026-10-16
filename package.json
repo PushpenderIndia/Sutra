@@ -19,7 +19,8 @@
     "secrets:example": "pnpm --filter @sutra/config secrets example",
     "secrets:pull": "pnpm --filter @sutra/config secrets pull",
     "secrets:push": "pnpm --filter @sutra/config secrets push",
-    "secrets:check": "pnpm --filter @sutra/config secrets check"
+    "secrets:check": "pnpm --filter @sutra/config secrets check",
+    "i18n:translate": "pnpm --filter @sutra/web i18n:translate"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

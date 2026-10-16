@@ -30,12 +30,17 @@ pnpm dev                     # http://localhost:3000
 | `pnpm db:seed --demo [--owner=you@example.com]` | Reset the demo workspace to a mid-campaign state; `--owner` (a user who has signed in once) makes you its owner |
 | `pnpm agent:try <agent> "<input>"` | Run one agent through the LiteLLM proxy in a Mongo session (`--session key` to resume) |
 | `pnpm secrets:pull` / `push` / `check` / `example` | Manage the `SUTRA_ENV` secret ([docs/secrets.md](docs/secrets.md)) |
+| `pnpm i18n:translate [locale…]` | Fill missing UI strings in `apps/web/messages/*.json` from English with Gemini |
 
 ## Auth and workspaces
 
 Sign-in is Google only (Better Auth). A workspace is a Better Auth organization with roles `owner`, `admin` and `member`; onboarding asks one question, the company website, and creates the workspace. Every Server Action is defined with `action()` / `userAction()` and every route handler with `route()` from `apps/web/lib/action.ts` (session → active workspace → role → Zod input); a test fails on any that isn't. Webhooks and jobs verify signatures with `apps/web/lib/verify.ts` instead. Google refresh tokens are kept only in `credentials`, encrypted.
 
 For local sign-in, create an OAuth client (Web) in Google Cloud with redirect URI `http://localhost:3000/api/auth/callback/google` and put its ID and secret in `.env.local`.
+
+## App shell
+
+One screen: the live agent graph in the top bar, four tabs (Business · Prospects · Campaigns · Leads, each a route under `apps/web/app/(app)/`) on the left, and the copilot chat on the right (resizable and collapsible; a bottom sheet on mobile). The UI uses shadcn/ui on Tailwind 4 with light and dark themes, TanStack Table behind one `<DataTable>`, TanStack Query for live data, and next-intl for UI strings (`en`, `hi`, `id`; the language is a cookie, separate from each contact's content language). `useSelection()` holds the current tab and selected rows, so the chat knows what "this" refers to. Press ⌘K for the command menu.
 
 ## Layout
 

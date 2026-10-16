@@ -53,12 +53,12 @@ Calm, editorial and confident:
 - UI language (the user's) is separate from content language (each contact's locale).
 
 ## Tasks
-- [ ] shadcn init + theme tokens + fonts
-- [ ] Shell layout: header slot for the graph bar, tabs, resizable chat slot
-- [ ] Selection-context store
-- [ ] Shared components above
-- [ ] next-intl + locale switcher + translation script
-- [ ] Empty states for the four tabs
+- [x] shadcn init + theme tokens + fonts
+- [x] Shell layout: header slot for the graph bar, tabs, resizable chat slot
+- [x] Selection-context store
+- [x] Shared components above
+- [x] next-intl + locale switcher + translation script
+- [x] Empty states for the four tabs
 
 ## Acceptance criteria
 - Lighthouse accessibility ≥ 95
