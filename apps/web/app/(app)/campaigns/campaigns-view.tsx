@@ -1,11 +1,30 @@
 'use client';
 import type { Locale } from '@sutra/domain';
-import { Eye, Megaphone, MousePointerClick, RefreshCw, Reply, Send } from 'lucide-react';
+import {
+  CalendarClock,
+  Eye,
+  Mail,
+  Megaphone,
+  MousePointerClick,
+  Pause,
+  Play,
+  RefreshCw,
+  Reply,
+  Send,
+  ShieldCheck,
+  Users,
+} from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { regenerateVariants } from '@/actions/campaigns';
+import {
+  approveCampaign,
+  pauseCampaign,
+  regenerateVariants,
+  resumeCampaign,
+} from '@/actions/campaigns';
 import { Checkpoint } from '@/components/checkpoint';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
@@ -19,6 +38,19 @@ import type { CampaignView } from '@/lib/data/campaigns';
 import { percent } from '@/lib/format';
 
 type Step = CampaignView['steps'][number];
+type Approval = CampaignView['approval'];
+
+/** "Asia/Jakarta" 09:12 → "Jakarta 09:12 WIB" in that zone. */
+function zoneTime(iso: string, timezone: string): string {
+  const city = (timezone.split('/').pop() ?? timezone).replace(/_/g, ' ');
+  const time = new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  }).format(new Date(iso));
+  return `${city} ${time}`;
+}
 
 const sum = (c: CampaignView, k: keyof Step['variants'][number]['stats']) =>
   c.steps.reduce((n, s) => n + s.variants.reduce((m, v) => m + v.stats[k], 0), 0);
@@ -39,8 +71,6 @@ export function CampaignsView({ campaigns }: { campaigns: CampaignView[] }) {
     <>
       <PageHeader title={t('title')} description={t('description')} />
       {campaigns.map((c) => {
-        const all = c.steps.flatMap((s) => s.variants);
-        const pending = all.filter((v) => v.status === 'pending_approval').length;
         const sent = sum(c, 'sent');
         return (
           <section key={c.id} aria-labelledby={`c-${c.id}`} className="flex flex-col gap-4">
@@ -50,16 +80,9 @@ export function CampaignsView({ campaigns }: { campaigns: CampaignView[] }) {
               </h2>
               <StatusBadge status={c.status} />
               {c.persona && <Badge variant="outline">{c.persona}</Badge>}
+              <CampaignControls id={c.id} status={c.status} />
             </div>
-            <Checkpoint
-              title={t('checkpoint')}
-              summary={
-                pending
-                  ? t('pendingVariants', { count: pending })
-                  : t('checkpointHint', { steps: c.steps.length, variants: all.length })
-              }
-              confirmed={!pending && !['draft', 'pending_approval'].includes(c.status)}
-            />
+            <ApprovalPanel campaign={c} />
             <StatCards
               label={c.name}
               items={[
@@ -99,6 +122,124 @@ export function CampaignsView({ campaigns }: { campaigns: CampaignView[] }) {
         );
       })}
     </>
+  );
+}
+
+/**
+ * Checkpoint 2 for one campaign: audience, the PR 10 compliance dry run, the timezone-aware schedule
+ * preview, the warm-up ramp and the Gmail-connect prompt. "Approve" (owner/admin) stamps the content
+ * hash and resumes the pipeline; nothing is sent until then.
+ */
+function ApprovalPanel({ campaign: c }: { campaign: CampaignView }) {
+  const t = useTranslations('campaigns');
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const a: Approval = c.approval;
+  const awaiting = c.status === 'draft' || c.status === 'pending_approval';
+  const confirmed = !awaiting && a.pending === 0;
+
+  const approve = () =>
+    new Promise<void>((resolve) => {
+      start(async () => {
+        const res = await approveCampaign({ campaignId: c.id });
+        if (!res.ok) toast.error(res.error);
+        else {
+          const { enrolled } = res.data;
+          toast.success(enrolled ? t('approvedEnrolled', { count: enrolled }) : t('approved'));
+          router.refresh();
+        }
+        resolve();
+      });
+    });
+
+  return (
+    <Checkpoint
+      title={t('checkpoint')}
+      confirmed={confirmed}
+      confirmLabel={pending ? t('approving') : t('approve')}
+      onConfirm={confirmed ? undefined : approve}
+      summary={
+        <div className="flex flex-col gap-1.5 text-sm">
+          <span className="inline-flex items-center gap-1.5">
+            <Users className="size-3.5 shrink-0" aria-hidden />
+            <Link href="/prospects" className="underline-offset-2 hover:underline">
+              {t('audience', { count: a.audience })}
+            </Link>
+            <span className="text-muted-foreground">
+              ·{' '}
+              {t('sequenceSummary', {
+                steps: c.steps.length,
+                variants: c.steps.flatMap((s) => s.variants).length,
+              })}
+            </span>
+          </span>
+          {a.pending > 0 && <span>{t('pendingVariants', { count: a.pending })}</span>}
+          {a.compliance && (
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
+              {a.compliance.text}
+            </span>
+          )}
+          {a.schedule && a.schedule.length > 0 && (
+            <span className="inline-flex items-start gap-1.5">
+              <CalendarClock className="size-3.5 shrink-0 translate-y-0.5" aria-hidden />
+              <span>
+                {a.schedule
+                  .slice(0, 4)
+                  .map((s) => zoneTime(s.first, s.timezone))
+                  .join(' · ')}
+                {a.warmup && a.warmup.length > 0 && (
+                  <span className="text-muted-foreground">
+                    {' — '}
+                    {t('warmupRamp', {
+                      today: a.warmup[0]?.cap ?? 0,
+                      tomorrow: a.warmup[1]?.cap ?? 0,
+                    })}
+                  </span>
+                )}
+              </span>
+            </span>
+          )}
+          {!a.mailboxConnected && (
+            <span className="inline-flex items-center gap-1.5 text-saffron">
+              <Mail className="size-3.5 shrink-0" aria-hidden />
+              <Link href="/settings" className="underline-offset-2 hover:underline">
+                {t('connectMailbox')}
+              </Link>
+            </span>
+          )}
+        </div>
+      }
+    />
+  );
+}
+
+/** Pause / resume a running campaign (also available via chat). */
+function CampaignControls({ id, status }: { id: string; status: CampaignView['status'] }) {
+  const t = useTranslations('campaigns');
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  if (status !== 'running' && status !== 'paused') return null;
+
+  const toggle = () =>
+    start(async () => {
+      const res = await (status === 'running' ? pauseCampaign : resumeCampaign)({ campaignId: id });
+      if (!res.ok) toast.error(res.error);
+      else router.refresh();
+    });
+
+  const Icon = status === 'running' ? Pause : Play;
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="ml-auto h-7 px-2 text-xs"
+      disabled={pending}
+      onClick={toggle}
+    >
+      <Icon className="size-3.5" />
+      {status === 'running' ? t('pause') : t('resume')}
+    </Button>
   );
 }
 

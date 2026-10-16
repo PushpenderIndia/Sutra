@@ -333,7 +333,17 @@
     "mergeHint": "Merge fields firstName, company, personalization and senderName are filled per contact at send time.",
     "regenerate": "Regenerate",
     "regenerateNote": "Optional note, e.g. more casual, or lead with the ROI",
-    "regenerating": "Regenerating…"
+    "regenerating": "Regenerating…",
+    "audience": "{count, plural, one {# contact} other {# contacts}}",
+    "sequenceSummary": "{steps} steps · {variants} variants",
+    "approve": "Approve campaign",
+    "approving": "Approving…",
+    "approved": "Campaign approved.",
+    "approvedEnrolled": "Campaign approved. {count, plural, one {# contact enrolled} other {# contacts enrolled}}.",
+    "connectMailbox": "Connect Gmail to start sending",
+    "warmupRamp": "warm-up {today} today, {tomorrow} tomorrow",
+    "pause": "Pause",
+    "resume": "Resume"
   },
   "leads": {
     "title": "Leads",

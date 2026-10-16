@@ -16,6 +16,14 @@ export {
   type ReasonCode,
   type Requirement,
 } from './check.ts';
-export { type Need, type Pack, type PackOverride, pack, packOverride, tighten } from './pack.ts';
+export {
+  type Need,
+  type Pack,
+  type PackOverride,
+  pack,
+  packOverride,
+  type SendWindow,
+  tighten,
+} from './pack.ts';
 export { type ComplianceStatus, isStale, REASON_LABELS, statusOf, summarize } from './report.ts';
 export { DAY, local, nextMidnight, nextOpen, startOfDay, zoned } from './time.ts';

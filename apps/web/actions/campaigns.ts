@@ -1,10 +1,35 @@
 'use server';
-import { personalizeForContact, regenerateStep } from '@sutra/agents';
-import { audit, Campaigns, Companies, Contacts, WorkspaceSettings } from '@sutra/db';
+import {
+  CAMPAIGN_STEP_JOB,
+  CHECKPOINT_CAMPAIGN,
+  enrollCampaign,
+  personalizeForContact,
+  regenerateStep,
+  resumePipeline,
+  sweepDueEnrollments,
+} from '@sutra/agents';
+import {
+  approveCampaign as approveCampaignContent,
+  audit,
+  Campaigns,
+  Companies,
+  Contacts,
+  Enrollments,
+  WorkspaceSettings,
+} from '@sutra/db';
 import type { Campaign, CampaignVariant, Contact, Locale } from '@sutra/domain';
-import { count, fillMergeFields, id, locale as localeSchema } from '@sutra/domain';
+import {
+  campaignTransitions,
+  count,
+  enrollmentTransitions,
+  fillMergeFields,
+  id,
+  locale as localeSchema,
+} from '@sutra/domain';
 import { z } from 'zod';
 import { AppError, action } from '@/lib/action';
+import { enqueue } from '@/lib/jobs';
+import { mainPipeline } from '@/lib/pipeline';
 
 /** The one place a variant's content changes: its approval (content hash) is always voided here. */
 function replaceVariant(
@@ -88,6 +113,92 @@ export const regenerateVariants = action(
     return { ok: true as const, variants: step.variants.length };
   },
   { role: 'member' },
+);
+
+/**
+ * Checkpoint 2's approval (owner/admin). Stamps `approvedBy`, `approvedAt` and a content hash on the
+ * campaign and each variant, sets the campaign running, then resumes the paused pipeline so the
+ * `sender` node enrols the audience — or enrols directly for a seeded/demo workspace with no live run.
+ * Nothing is ever sent before this runs, and an edited variant is excluded until it is re-approved.
+ */
+export const approveCampaign = action(
+  z.object({ campaignId: id }),
+  async ({ workspaceId, user }, { campaignId }) => {
+    const approved = await approveCampaignContent(workspaceId, campaignId, user.id);
+    if (!approved) throw new AppError('INVALID', 'That campaign cannot be approved');
+
+    const pipeline = mainPipeline();
+    const resumed = pipeline
+      ? await resumePipeline(pipeline, workspaceId, CHECKPOINT_CAMPAIGN)
+          .then(() => true)
+          .catch(() => false)
+      : false;
+    // The sender node enrols when the pipeline resumes; otherwise enrol here (idempotent either way).
+    const enrolled = resumed ? 0 : await enrollCampaign(workspaceId, approved, { enqueue });
+    return { ok: true as const, enrolled };
+  },
+  { role: 'admin' },
+);
+
+/** Pauses a running campaign: the engine stops sending until it is resumed (also available via chat). */
+export const pauseCampaign = action(
+  z.object({ campaignId: id }),
+  async ({ workspaceId, user }, { campaignId }) => {
+    const campaign = await Campaigns.get(workspaceId, campaignId);
+    if (!campaign) throw new AppError('NOT_FOUND', 'That campaign no longer exists');
+    if (campaign.status !== 'running')
+      throw new AppError('INVALID', 'Only a running campaign can be paused');
+    await Campaigns.transition(workspaceId, campaignId, 'running', 'paused', campaignTransitions);
+    await audit(workspaceId, { kind: 'user', id: user.id }, 'campaign.pause', {
+      entity: 'campaigns',
+      entityId: campaignId,
+    });
+    return { ok: true as const };
+  },
+);
+
+/** Resumes a paused campaign and re-queues every step that fell due while it was paused. */
+export const resumeCampaign = action(
+  z.object({ campaignId: id }),
+  async ({ workspaceId, user }, { campaignId }) => {
+    const campaign = await Campaigns.get(workspaceId, campaignId);
+    if (!campaign) throw new AppError('NOT_FOUND', 'That campaign no longer exists');
+    if (campaign.status !== 'paused') throw new AppError('INVALID', 'That campaign is not paused');
+    await Campaigns.transition(workspaceId, campaignId, 'paused', 'running', campaignTransitions);
+    await sweepDueEnrollments(workspaceId, new Date(), enqueue);
+    await audit(workspaceId, { kind: 'user', id: user.id }, 'campaign.resume', {
+      entity: 'campaigns',
+      entityId: campaignId,
+    });
+    return { ok: true as const };
+  },
+);
+
+/** Pauses or resumes a single contact's enrollment (a per-contact override, also available via chat). */
+export const setContactPaused = action(
+  z.object({ enrollmentId: id, paused: z.boolean() }),
+  async ({ workspaceId, user }, { enrollmentId, paused }) => {
+    const enr = await Enrollments.get(workspaceId, enrollmentId);
+    if (!enr) throw new AppError('NOT_FOUND', 'That enrollment no longer exists');
+    const [from, to] = paused ? (['active', 'paused'] as const) : (['paused', 'active'] as const);
+    if (enr.status !== from) throw new AppError('INVALID', `Enrollment is ${enr.status}`);
+    const nextRunAt = paused ? enr.nextRunAt : (enr.nextRunAt ?? new Date());
+    await Enrollments.transition(workspaceId, enrollmentId, from, to, enrollmentTransitions, {
+      nextRunAt,
+    });
+    if (!paused)
+      await enqueue(CAMPAIGN_STEP_JOB, { workspaceId, enrollmentId }, { runAt: nextRunAt });
+    await audit(
+      workspaceId,
+      { kind: 'user', id: user.id },
+      paused ? 'enrollment.pause' : 'enrollment.resume',
+      {
+        entity: 'enrollment',
+        entityId: enrollmentId,
+      },
+    );
+    return { ok: true as const };
+  },
 );
 
 /** A contact matching the campaign persona (with its company), to render a real-looking preview. */

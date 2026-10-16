@@ -5,3 +5,7 @@ try {
   console.error((error as Error).message);
   process.exit(1);
 }
+
+// Register background-job handlers and select the driver (inline in dev, Cloud Tasks in prod).
+const { installJobs } = await import('./lib/jobs');
+installJobs();

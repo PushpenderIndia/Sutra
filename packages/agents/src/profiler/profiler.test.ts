@@ -123,8 +123,14 @@ describe('profiler pipeline (checkpoint 1)', () => {
     expect(icpDoc).toMatchObject({ status: 'draft', version: 1 });
     expect(icpDoc?.personas[0]?.title).toBe('Head of Operations');
 
-    // Confirming resumes the pipeline.
+    // Confirming resumes the pipeline, which now runs through to the second human checkpoint
+    // (approve campaign) and pauses there.
     await resumePipeline(mainPipeline, ws, 'checkpoint1');
+    expect((await PipelineRuns.get(ws, runId))?.status).toBe('waiting_human');
+    expect((await nodeMap(ws, runId)).checkpoint2?.status).toBe('waiting_human');
+
+    // Approving (checkpoint 2) runs the sender node and completes the run.
+    await resumePipeline(mainPipeline, ws, 'checkpoint2');
     expect((await PipelineRuns.get(ws, runId))?.status).toBe('done');
   });
 

@@ -156,6 +156,9 @@ importers:
       '@mozilla/readability':
         specifier: 0.6.0
         version: 0.6.0
+      '@sutra/compliance':
+        specifier: workspace:*
+        version: link:../compliance
       '@sutra/config':
         specifier: workspace:*
         version: link:../config

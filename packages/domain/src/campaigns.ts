@@ -123,6 +123,7 @@ export const stopReason = z.enum([
   'campaign_done',
   'manual',
 ]);
+export type StopReason = z.infer<typeof stopReason>;
 
 export const enrollment = doc({
   contactId: id,

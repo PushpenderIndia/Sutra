@@ -1,3 +1,4 @@
+import { enrollApprovedCampaigns } from './campaign/enroll.ts';
 import { runCopywriter } from './copywriter/run.ts';
 import { runEnricher } from './enricher/run.ts';
 import { definePipeline } from './pipeline/define.ts';
@@ -10,6 +11,9 @@ import { enabledProspectorSources, runProspectorSource } from './prospector/run.
  */
 export const CHECKPOINT_PROFILE = 'checkpoint1';
 
+/** The human checkpoint-2 node id (`you approve campaign`); resumed when the campaign is approved. */
+export const CHECKPOINT_CAMPAIGN = 'checkpoint2';
+
 /**
  * The executable autonomous flow. The same definition drives execution (`runPipeline`) and,
  * together with `MAIN_TOPOLOGY`, the live agent graph (PR 17). Later PRs add enrichment, campaigns
@@ -20,7 +24,7 @@ export const mainPipeline = definePipeline(
   {
     orchestrator: {
       label: 'Orchestrator',
-      children: ['profiler', 'checkpoint1', 'prospector', 'enricher', 'copywriter'],
+      children: ['profiler', 'checkpoint1', 'prospector', 'enricher', 'copywriter', 'sender'],
     },
     profiler: {
       label: 'Business Profiler',
@@ -58,6 +62,22 @@ export const mainPipeline = definePipeline(
       // saving one draft campaign per persona for checkpoint 2.
       children: ['sequencePlanner', 'variantWriter', 'qualityGate'],
       run: runCopywriter,
+    },
+    checkpoint2: {
+      label: 'You approve campaign',
+      kind: 'human',
+      after: ['copywriter'],
+    },
+    sender: {
+      label: 'Sender',
+      after: ['checkpoint2'],
+      // After approval: enrol each approved campaign's audience and schedule their first step inside
+      // the contact's send window. Each step then flows through compliance → scheduler → Gmail.
+      children: ['compliance', 'scheduler', 'gmail'],
+      run: async ({ workspaceId }) => {
+        const enrolled = await enrollApprovedCampaigns(workspaceId);
+        return { summary: enrolled ? `${enrolled} contacts enrolled` : 'No one to enrol' };
+      },
     },
   },
   { name: 'main' },

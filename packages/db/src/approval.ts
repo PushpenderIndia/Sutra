@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
-import type { CampaignVariant, Id } from '@sutra/domain';
+import type { Campaign, CampaignStep, CampaignVariant, Id } from '@sutra/domain';
+import { audit } from './audit.ts';
 import { Campaigns } from './collections.ts';
 
 declare const approved: unique symbol;
@@ -41,4 +42,54 @@ export async function approvedVariant(
   if (!variant?.approvedHash || !SENDABLE_VARIANT.has(variant.status)) return null;
   if (variant.approvedHash !== variantHash(variant)) return null;
   return { campaignId, variantId, hash: variant.approvedHash } as ApprovedVariant;
+}
+
+/** Campaigns and variants in these states can be approved; the rest (rejected/retired) are left as-is. */
+const APPROVABLE_CAMPAIGN = new Set(['draft', 'pending_approval', 'approved', 'running']);
+const APPROVABLE_VARIANT = new Set(['draft', 'pending_approval', 'approved', 'active']);
+
+/** The hash of a whole campaign's approved content: the ordered list of its variants' content hashes. */
+export const campaignHash = (steps: CampaignStep[]) =>
+  createHash('sha256')
+    .update(JSON.stringify(steps.map((s) => s.variants.map((v) => variantHash(v)))))
+    .digest('hex');
+
+/** Stamps one variant as approved: it becomes `active`, with the content hash, approver and time. */
+const approveVariantContent = (v: CampaignVariant, by: string, at: Date): CampaignVariant =>
+  APPROVABLE_VARIANT.has(v.status)
+    ? { ...v, status: 'active', approvedHash: variantHash(v), approvedBy: by, approvedAt: at }
+    : v;
+
+/**
+ * Checkpoint 2's approval. Stamps `approvedBy`, `approvedAt` and a content hash on the campaign and
+ * every approvable variant (making each `active`), and sets the campaign `running` so the engine can
+ * send. A later edit to a variant voids its hash (it returns to `draft`) and it is excluded from sends
+ * until re-approved. Returns the updated campaign, or `null` if it is missing or in a non-approvable
+ * state (e.g. already `done`).
+ */
+export async function approveCampaign(
+  workspaceId: Id,
+  campaignId: Id,
+  by: string,
+  at: Date = new Date(),
+): Promise<Campaign | null> {
+  const campaign = await Campaigns.get(workspaceId, campaignId);
+  if (!campaign || !APPROVABLE_CAMPAIGN.has(campaign.status)) return null;
+  const steps = campaign.steps.map((s) => ({
+    ...s,
+    variants: s.variants.map((v) => approveVariantContent(v, by, at)),
+  }));
+  const updated = await Campaigns.update(workspaceId, campaignId, {
+    steps,
+    status: 'running',
+    approvedBy: by,
+    approvedAt: at,
+    approvedHash: campaignHash(steps),
+  });
+  await audit(workspaceId, { kind: 'user', id: by }, 'campaign.approve', {
+    entity: 'campaigns',
+    entityId: campaignId,
+    data: { variants: steps.flatMap((s) => s.variants).length },
+  });
+  return updated;
 }

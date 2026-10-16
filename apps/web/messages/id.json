@@ -333,7 +333,17 @@
     "mergeHint": "Merge field firstName, company, personalization, dan senderName diisi per kontak saat pengiriman.",
     "regenerate": "Buat ulang",
     "regenerateNote": "Catatan opsional, mis. lebih santai, atau mulai dari ROI",
-    "regenerating": "Membuat ulang…"
+    "regenerating": "Membuat ulang…",
+    "audience": "{count, plural, other {# kontak}}",
+    "sequenceSummary": "{steps} langkah · {variants} varian",
+    "approve": "Setujui kampanye",
+    "approving": "Menyetujui…",
+    "approved": "Kampanye disetujui.",
+    "approvedEnrolled": "Kampanye disetujui. {count, plural, other {# kontak didaftarkan}}.",
+    "connectMailbox": "Hubungkan Gmail untuk mulai mengirim",
+    "warmupRamp": "pemanasan {today} hari ini, {tomorrow} besok",
+    "pause": "Jeda",
+    "resume": "Lanjutkan"
   },
   "leads": {
     "title": "Lead",

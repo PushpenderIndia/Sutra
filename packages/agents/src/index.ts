@@ -9,6 +9,7 @@ export {
   renderTemplate,
 } from './agent.ts';
 export * from './agents/index.ts';
+export * from './campaign/index.ts';
 export {
   type CopywriterDeps,
   copywriterDeps,
@@ -65,10 +66,13 @@ export {
 export {
   defineJob,
   dispatch,
+  enqueue,
   handleJob,
+  hasJob,
   inProcessDispatcher,
   type JobDispatcher,
   type JobHandler,
+  type JobOptions,
   type JobPayload,
   setJobDispatcher,
 } from './jobs.ts';
@@ -85,7 +89,7 @@ export {
 export { latestRun, resumePipeline, runPipeline, runTrigger } from './pipeline/engine.ts';
 export { nodeScope, PipelineRecorder, recordStep, reportProgress } from './pipeline/recorder.ts';
 export * from './pipeline/topology.ts';
-export { CHECKPOINT_PROFILE, mainPipeline } from './pipeline.ts';
+export { CHECKPOINT_CAMPAIGN, CHECKPOINT_PROFILE, mainPipeline } from './pipeline.ts';
 export {
   CRAWL_TTL_MS,
   type CrawlCache,

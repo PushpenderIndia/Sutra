@@ -333,7 +333,17 @@
     "mergeHint": "मर्ज फ़ील्ड firstName, company, personalization और senderName भेजते समय प्रत्येक संपर्क के लिए भरे जाते हैं।",
     "regenerate": "पुनः बनाएँ",
     "regenerateNote": "वैकल्पिक टिप्पणी, जैसे अधिक अनौपचारिक, या ROI से शुरू करें",
-    "regenerating": "पुनः बनाया जा रहा है…"
+    "regenerating": "पुनः बनाया जा रहा है…",
+    "audience": "{count, plural, one {# संपर्क} other {# संपर्क}}",
+    "sequenceSummary": "{steps} चरण · {variants} वेरिएंट",
+    "approve": "अभियान मंज़ूर करें",
+    "approving": "मंज़ूर किया जा रहा है…",
+    "approved": "अभियान मंज़ूर हो गया।",
+    "approvedEnrolled": "अभियान मंज़ूर हो गया। {count, plural, one {# संपर्क नामांकित} other {# संपर्क नामांकित}}।",
+    "connectMailbox": "भेजना शुरू करने के लिए Gmail कनेक्ट करें",
+    "warmupRamp": "वॉर्म-अप {today} आज, {tomorrow} कल",
+    "pause": "रोकें",
+    "resume": "फिर शुरू करें"
   },
   "leads": {
     "title": "लीड्स",

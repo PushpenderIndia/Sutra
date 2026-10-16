@@ -10,6 +10,7 @@ import {
   WorkspaceSettings,
 } from '@sutra/db';
 import type { Contact, Id, Locale } from '@sutra/domain';
+import { approvalView, hasMailbox } from './approval';
 
 type Counts = Map<string, number>;
 
@@ -59,6 +60,7 @@ export async function loadCampaigns(workspaceId: Id) {
     WorkspaceSettings.findOne(workspaceId, {}),
   ]);
   const senderName = settings?.senderName ?? 'Your name';
+  const mailboxConnected = await hasMailbox(workspaceId);
 
   return Promise.all(
     campaigns.map(async (c) => {
@@ -81,6 +83,8 @@ export async function loadCampaigns(workspaceId: Id) {
         persona: c.persona,
         status: c.status,
         approvedAt: c.approvedAt?.toISOString(),
+        /** Checkpoint 2 summary: audience, compliance report, schedule preview, mailbox. */
+        approval: await approvalView(workspaceId, c, settings, mailboxConnected),
         /** Locales the templates were translated into, for the preview locale switcher. */
         locales,
         sample: sampleFor(contact ?? undefined, company?.name, senderName),

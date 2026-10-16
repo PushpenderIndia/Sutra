@@ -1,6 +1,13 @@
 import 'server-only';
 
-export { type ApprovedVariant, approvedVariant, variantHash } from './approval.ts';
+export { type ComplianceStatus, statusOf, summarize } from '@sutra/compliance';
+export {
+  type ApprovedVariant,
+  approveCampaign,
+  approvedVariant,
+  campaignHash,
+  variantHash,
+} from './approval.ts';
 export { audit } from './audit.ts';
 export { closeDb, db, mongo } from './client.ts';
 export * from './collections.ts';
