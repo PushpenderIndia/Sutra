@@ -11,6 +11,9 @@ Requires Node 22 and pnpm 10.
 ```sh
 pnpm i
 pnpm secrets:pull            # or: cp .env.example .env.local
+docker compose -f infra/docker-compose.yml up -d   # local MongoDB (or point MONGODB_URI at Atlas)
+pnpm db:migrate              # collections, validators, indexes
+pnpm db:seed --demo          # optional: demo workspace with a running campaign
 pnpm dev                     # http://localhost:3000
 ```
 
@@ -22,7 +25,9 @@ pnpm dev                     # http://localhost:3000
 | `pnpm build` | Production build |
 | `pnpm lint` / `pnpm format` | Biome check / fix |
 | `pnpm typecheck` | TypeScript across every workspace |
-| `pnpm test` | Vitest across every workspace |
+| `pnpm test` | Vitest across every workspace (DB tests use an in-memory MongoDB) |
+| `pnpm db:migrate` | Create collections with Zod-generated `$jsonSchema` validators and indexes (idempotent) |
+| `pnpm db:seed --demo` | Reset the demo workspace to a mid-campaign state |
 | `pnpm secrets:pull` / `push` / `check` / `example` | Manage the `SUTRA_ENV` secret ([docs/secrets.md](docs/secrets.md)) |
 
 ## Layout

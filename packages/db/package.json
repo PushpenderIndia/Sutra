@@ -7,6 +7,18 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "migrate": "node --conditions=react-server scripts/migrate.ts",
+    "seed": "node --conditions=react-server scripts/seed.ts",
     "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@sutra/config": "workspace:*",
+    "@sutra/domain": "workspace:*",
+    "mongodb": "7.7.0",
+    "server-only": "0.0.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "11.3.0"
   }
 }

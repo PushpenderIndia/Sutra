@@ -78,13 +78,13 @@ export const Contacts = repository('contacts', contact);
 - `pnpm db:seed --demo`: a demo workspace with a confirmed profile, prospects, a running campaign with variant stats, replies and meetings.
 
 ## Tasks
-- [ ] Domain schemas + enums + transition tables
-- [ ] Mongo client singleton (survives Next.js hot reload via `globalThis`)
-- [ ] `repository()` + one line per collection
-- [ ] `indexes.ts` + `db:migrate`
-- [ ] `audit()` helper
-- [ ] `db:seed --demo`
-- [ ] Tests with `mongodb-memory-server`
+- [x] Domain schemas + enums + transition tables
+- [x] Mongo client singleton (survives Next.js hot reload via `globalThis`)
+- [x] `repository()` + one line per collection
+- [x] `indexes.ts` + `db:migrate`
+- [x] `audit()` helper
+- [x] `db:seed --demo`
+- [x] Tests with `mongodb-memory-server`
 
 ## Acceptance criteria
 - Reading another workspace's document is impossible through the API (tested)
