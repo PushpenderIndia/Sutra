@@ -277,7 +277,11 @@
     "emptyTitle": "अभी कोई संभावित ग्राहक नहीं",
     "emptyHint": "व्यवसाय प्रोफ़ाइल की पुष्टि होते ही प्रॉस्पेक्टर कई स्रोतों में एक साथ खोजता है।",
     "sourceFilter": "{source} से मिले",
-    "clearFilter": "सभी स्रोत दिखाएँ"
+    "clearFilter": "सभी स्रोत दिखाएँ",
+    "strongOnly": "केवल मज़बूत फ़िट",
+    "signalsTitle": "संकेत",
+    "reasonsTitle": "यह स्कोर क्यों",
+    "noResearch": "अभी कोई शोध नहीं"
   },
   "campaigns": {
     "title": "अभियान",

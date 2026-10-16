@@ -1,3 +1,4 @@
+import { runEnricher } from './enricher/run.ts';
 import { definePipeline } from './pipeline/define.ts';
 import { runProfiler } from './profiler/run.ts';
 import { enabledProspectorSources, runProspectorSource } from './prospector/run.ts';
@@ -11,11 +12,15 @@ export const CHECKPOINT_PROFILE = 'checkpoint1';
 /**
  * The executable autonomous flow. The same definition drives execution (`runPipeline`) and,
  * together with `MAIN_TOPOLOGY`, the live agent graph (PR 17). Later PRs add enrichment, campaigns
- * and sending; PR 07 delivers the profiler and checkpoint 1, PR 08 the multi-source prospector.
+ * and sending; PR 07 delivers the profiler and checkpoint 1, PR 08 the multi-source prospector,
+ * PR 09 the enricher and scorer.
  */
 export const mainPipeline = definePipeline(
   {
-    orchestrator: { label: 'Orchestrator', children: ['profiler', 'checkpoint1', 'prospector'] },
+    orchestrator: {
+      label: 'Orchestrator',
+      children: ['profiler', 'checkpoint1', 'prospector', 'enricher'],
+    },
     profiler: {
       label: 'Business Profiler',
       after: ['orchestrator'],
@@ -34,6 +39,15 @@ export const mainPipeline = definePipeline(
       // → upsert, and runs the contact finder for free-source companies without contacts.
       fanOut: enabledProspectorSources,
       run: runProspectorSource,
+    },
+    enricher: {
+      label: 'Enricher & Scorer',
+      after: ['prospector'],
+      // Per company: contact finder (for any still without contacts) → researcher → scorer, within
+      // a concurrency limit and a per-run budget. A deterministic pre-filter disqualifies some with
+      // no LLM call; the rest get a blended score (0.6 LLM + 0.4 rules).
+      children: ['contactFinder', 'researcher', 'scorer'],
+      run: runEnricher,
     },
   },
   { name: 'main' },

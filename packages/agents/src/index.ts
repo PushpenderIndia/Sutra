@@ -10,6 +10,31 @@ export {
 } from './agent.ts';
 export * from './agents/index.ts';
 export {
+  type EnricherDeps,
+  enricherDeps,
+  setEnricherDeps,
+} from './enricher/deps.ts';
+export { enricherFixtures } from './enricher/fixtures.ts';
+export {
+  buildResearch,
+  type CompanyResearcher,
+  type CompanyResearchInput,
+  fakeCompanyResearcher,
+  GeminiCompanyResearcher,
+} from './enricher/researcher.ts';
+export { ENRICH_BUDGET, runEnricher } from './enricher/run.ts';
+export {
+  blendScore,
+  DEFAULT_SCORE_WEIGHTS,
+  type Disqualification,
+  fitForScore,
+  type PreFilterInput,
+  preFilter,
+  type RulesInput,
+  rulesScore,
+  type ScoreWeights,
+} from './enricher/scoring.ts';
+export {
   defineJob,
   dispatch,
   handleJob,

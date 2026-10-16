@@ -22,6 +22,11 @@ export async function loadProspects(workspaceId: Id) {
     score: c.score,
     fit: c.fit,
     reasons: c.scoreReasons.map((r) => r.text),
+    // The full score reasons and research power the expandable research card (PR 09).
+    scoreReasons: c.scoreReasons,
+    research: c.research
+      ? { summary: c.research.summary, signals: c.research.signals, sources: c.research.sources }
+      : undefined,
     status: c.status,
     contacts: (byCompany.get(c._id) ?? []).map((p) => ({
       name: p.name,

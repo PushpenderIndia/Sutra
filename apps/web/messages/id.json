@@ -277,7 +277,11 @@
     "emptyTitle": "Belum ada prospek",
     "emptyHint": "Setelah profil bisnis dikonfirmasi, prospektor mencari dari beberapa sumber sekaligus.",
     "sourceFilter": "Ditemukan via {source}",
-    "clearFilter": "Tampilkan semua sumber"
+    "clearFilter": "Tampilkan semua sumber",
+    "strongOnly": "Hanya kecocokan kuat",
+    "signalsTitle": "Sinyal",
+    "reasonsTitle": "Alasan skor ini",
+    "noResearch": "Belum ada riset"
   },
   "campaigns": {
     "title": "Kampanye",

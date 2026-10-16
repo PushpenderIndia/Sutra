@@ -1,7 +1,7 @@
 'use client';
-import { Building2, Gauge, Mail, Radar, UsersRound, X } from 'lucide-react';
+import { Building2, ExternalLink, Gauge, Mail, Radar, Sparkles, UsersRound, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { columns, DataTable } from '@/components/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
@@ -16,6 +16,72 @@ import { cn } from '@/lib/utils';
 
 const col = columns<ProspectRow>();
 type Source = ProspectRow['sources'][number];
+
+const hostOf = (url: string): string => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+};
+
+/** The expandable research card: the researcher's signals (with source chips) and the score reasons. */
+function ResearchCard({ row }: { row: ProspectRow }) {
+  const t = useTranslations('prospects');
+  const { research, scoreReasons } = row;
+  if (!research && !scoreReasons.length)
+    return <p className="p-4 text-sm text-muted-foreground">{t('noResearch')}</p>;
+  return (
+    <div className="grid gap-4 rounded-xl border bg-card p-4 md:grid-cols-2">
+      <div className="flex flex-col gap-2">
+        <h3 className="flex items-center gap-1.5 text-sm font-medium">
+          <Sparkles aria-hidden className="size-3.5 text-saffron" />
+          {t('signalsTitle')}
+        </h3>
+        {research?.summary && <p className="text-sm text-muted-foreground">{research.summary}</p>}
+        <ul className="flex flex-col gap-1.5">
+          {(research?.signals ?? []).map((s) => (
+            <li key={s.sourceUrl + s.text} className="flex flex-wrap items-center gap-1.5 text-sm">
+              <Badge variant="outline">{s.kind}</Badge>
+              <span>{s.text}</span>
+              <a
+                href={s.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              >
+                {hostOf(s.sourceUrl)}
+                <ExternalLink aria-hidden className="size-3" />
+              </a>
+            </li>
+          ))}
+          {!research?.signals.length && (
+            <li className="text-sm text-muted-foreground">{t('noResearch')}</li>
+          )}
+        </ul>
+      </div>
+      <div className="flex flex-col gap-2">
+        <h3 className="flex items-center gap-1.5 text-sm font-medium">
+          <Gauge aria-hidden className="size-3.5 text-muted-foreground" />
+          {t('reasonsTitle')}
+        </h3>
+        <ul className="flex flex-col gap-1.5">
+          {scoreReasons.map((r) => (
+            <li key={r.text} className="text-sm">
+              <span>{r.text}</span>
+              {r.evidence && (
+                <span className="block text-xs text-muted-foreground">{r.evidence}</span>
+              )}
+            </li>
+          ))}
+          {!scoreReasons.length && (
+            <li className="text-sm text-muted-foreground">{t('noResearch')}</li>
+          )}
+        </ul>
+      </div>
+    </div>
+  );
+}
 
 function Score({ value }: { value?: number }) {
   if (value === undefined) return <span className="text-muted-foreground">–</span>;
@@ -38,7 +104,13 @@ export function ProspectsView({ rows: all }: { rows: ProspectRow[] }) {
   const locale = useLocale();
   // `?source=` comes from the agent graph's "view output" on a prospecting source.
   const [source, setSource] = useUrlState('source');
-  const rows = source ? all.filter((r) => r.sources.some((s) => s === source)) : all;
+  // "Strong fit" quick filter; the default campaign audience is strong + medium.
+  const [strongOnly, setStrongOnly] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const rows = all.filter(
+    (r) => (!source || r.sources.some((s) => s === source)) && (!strongOnly || r.fit === 'strong'),
+  );
+  const openRow = openId ? rows.find((r) => r.id === openId) : undefined;
 
   const cols = useMemo(
     () =>
@@ -151,16 +223,29 @@ export function ProspectsView({ rows: all }: { rows: ProspectRow[] }) {
         columns={cols}
         data={rows}
         selectable
+        activeId={openId}
+        onRowClick={(r) => setOpenId((id) => (id === r.id ? null : r.id))}
         toolbar={
-          source && (
-            <Button variant="secondary" size="sm" onClick={() => setSource(null)}>
-              {t('sourceFilter', {
-                source: sources.has(source as Source) ? sources(source as Source) : source,
-              })}
-              <X aria-hidden />
-              <span className="sr-only">{t('clearFilter')}</span>
+          <>
+            <Button
+              variant={strongOnly ? 'default' : 'secondary'}
+              size="sm"
+              aria-pressed={strongOnly}
+              onClick={() => setStrongOnly((v) => !v)}
+            >
+              <Radar aria-hidden />
+              {t('strongOnly')}
             </Button>
-          )
+            {source && (
+              <Button variant="secondary" size="sm" onClick={() => setSource(null)}>
+                {t('sourceFilter', {
+                  source: sources.has(source as Source) ? sources(source as Source) : source,
+                })}
+                <X aria-hidden />
+                <span className="sr-only">{t('clearFilter')}</span>
+              </Button>
+            )}
+          </>
         }
         empty={
           <EmptyState
@@ -171,6 +256,7 @@ export function ProspectsView({ rows: all }: { rows: ProspectRow[] }) {
           />
         }
       />
+      {openRow && <ResearchCard row={openRow} />}
     </>
   );
 }

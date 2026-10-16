@@ -277,7 +277,11 @@
     "emptyTitle": "No prospects yet",
     "emptyHint": "Once you confirm your business profile, the prospector searches several sources in parallel.",
     "sourceFilter": "Found via {source}",
-    "clearFilter": "Show all sources"
+    "clearFilter": "Show all sources",
+    "strongOnly": "Strong fit only",
+    "signalsTitle": "Signals",
+    "reasonsTitle": "Why this score",
+    "noResearch": "No research yet"
   },
   "campaigns": {
     "title": "Campaigns",

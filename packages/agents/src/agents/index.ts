@@ -2,3 +2,4 @@
 export { hello } from './hello.ts';
 export { icpBuilder, profileWriter } from './profiler.ts';
 export { contactExtractor, type ExtractedContacts, extractedContacts } from './prospector.ts';
+export { scorer } from './scorer.ts';

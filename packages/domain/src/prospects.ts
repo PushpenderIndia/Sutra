@@ -32,7 +32,9 @@ export const companyResearch = z.object({
 export type CompanyResearch = z.infer<typeof companyResearch>;
 
 export const fit = z.enum(['strong', 'medium', 'weak', 'disqualified']);
+export type Fit = z.infer<typeof fit>;
 export const scoreReason = z.object({ text: z.string(), weight: z.number(), evidence: z.string() });
+export type ScoreReason = z.infer<typeof scoreReason>;
 
 /** Scorer output (PR 09). */
 export const prospectScore = z.object({
@@ -41,6 +43,16 @@ export const prospectScore = z.object({
   reasons: z.array(scoreReason).max(6),
 });
 export type ProspectScore = z.infer<typeof prospectScore>;
+
+/**
+ * The scorer LLM's own assessment (PR 09), before it is blended with the deterministic rules score.
+ * The final {@link prospectScore} is `0.6 * llm + 0.4 * rules`; `fit` is derived from the blend.
+ */
+export const llmProspectScore = z.object({
+  score: z.int().min(0).max(100),
+  reasons: z.array(scoreReason).max(6),
+});
+export type LlmProspectScore = z.infer<typeof llmProspectScore>;
 
 /** Where a company was found. `resembles` names the customer a lookalike was found from. */
 export const companySource = z.object({
