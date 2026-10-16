@@ -83,6 +83,28 @@ describe('approveCampaign', () => {
     expect(permit?.hash).toBe(variantHash(reapproved?.steps[0]?.variants[0] ?? ({} as never)));
   });
 
+  it('refuses a send permit when content is tampered but the status and hash are left intact', async () => {
+    // The approval-integrity property (PR 18): a send whose variant content hash no longer matches the
+    // approved hash is refused, even if an attacker (or a bug) leaves the variant `active` and keeps the
+    // old `approvedHash`. Only `approvedVariant()` issues the typed send permit, and it recomputes the hash.
+    const ws = newId();
+    const campaign = await draftCampaign(ws);
+    const approved = await approveCampaign(ws, campaign._id, 'user-1');
+    const variantId = approved?.steps[0]?.variants[0]?.id as string;
+    expect(await approvedVariant(ws, campaign._id, variantId)).not.toBeNull();
+
+    // Tamper with the body only — keep status `active` and the stale approvedHash.
+    const steps = (approved?.steps ?? []).map((s) => ({
+      ...s,
+      variants: s.variants.map((v) =>
+        v.id === variantId ? { ...v, body: 'Hi {{firstName}} — malicious edit' } : v,
+      ),
+    }));
+    await Campaigns.update(ws, campaign._id, { steps });
+
+    expect(await approvedVariant(ws, campaign._id, variantId)).toBeNull();
+  });
+
   it('refuses to approve a finished campaign', async () => {
     const ws = newId();
     const campaign = await draftCampaign(ws);

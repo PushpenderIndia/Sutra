@@ -6,6 +6,11 @@ try {
   process.exit(1);
 }
 
+// Wire the observability sinks (structured logs → Cloud Logging, spans → Cloud Trace, metrics) first,
+// so job registration and everything after it is traced and logged with correlation ids.
+const { installObservability } = await import('./lib/observability');
+installObservability();
+
 // Register background-job handlers and select the driver (inline in dev, Cloud Tasks in prod).
 const { installJobs } = await import('./lib/jobs');
 installJobs();

@@ -18,7 +18,7 @@ export function NodeDetails({ node }: { node: GraphNode }) {
   const format = useFormatter();
   const label = useNodeLabel();
   const line = useLiveLine();
-  const { nodes, children, now, onRerun, setOpenId } = useGraph();
+  const { nodes, children, now, onRerun, traceLink, setOpenId } = useGraph();
   const s = node.state;
   const ms = durationMs(s, now);
   const calls = recentToolCalls(nodes, node.id);
@@ -80,8 +80,16 @@ export function NodeDetails({ node }: { node: GraphNode }) {
           <p className="text-xs text-muted-foreground">{t('noToolCalls')}</p>
         )}
       </section>
-      {(href || (onRerun && rerunnable(node))) && (
+      {(href || traceLink || (onRerun && rerunnable(node))) && (
         <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-3">
+          {traceLink && (
+            <Button size="sm" variant="ghost" asChild>
+              <a href={traceLink} target="_blank" rel="noreferrer">
+                {t('viewTrace')}
+                <ArrowUpRight aria-hidden />
+              </a>
+            </Button>
+          )}
           {onRerun && rerunnable(node) && (
             <Button
               size="sm"

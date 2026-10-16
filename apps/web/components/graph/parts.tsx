@@ -26,6 +26,8 @@ export type GraphEnv = {
   flashing: ReadonlySet<string>;
   /** Shows "re-run from here" (admins). */
   onRerun?: (nodeId: string) => unknown;
+  /** Cloud Trace link for the run, so each node popover can open its full trace (PR 18). */
+  traceLink?: string;
   openId: string | null;
   setOpenId: (id: string | null) => void;
 };

@@ -62,6 +62,7 @@
     "toolCalls": "Recent tool calls",
     "noToolCalls": "No tool calls yet",
     "viewOutput": "View output",
+    "viewTrace": "View trace",
     "openCheckpoint": "Go to checkpoint",
     "rerun": "Re-run from here",
     "rerunHint": "Recomputes this step and everything after it",

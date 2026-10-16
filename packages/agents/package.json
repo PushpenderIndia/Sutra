@@ -9,6 +9,7 @@
   },
   "scripts": {
     "try": "node --conditions=react-server scripts/try.ts",
+    "eval": "node --conditions=react-server --experimental-strip-types evals/run.ts",
     "typecheck": "tsc"
   },
   "dependencies": {
@@ -20,6 +21,7 @@
     "@sutra/db": "workspace:*",
     "@sutra/domain": "workspace:*",
     "@sutra/mail": "workspace:*",
+    "@sutra/obs": "workspace:*",
     "@sutra/sources": "workspace:*",
     "linkedom": "0.18.13",
     "zod": "4.6.7",

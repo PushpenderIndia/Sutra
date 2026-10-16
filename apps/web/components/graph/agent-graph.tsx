@@ -74,6 +74,7 @@ export function AgentGraph({
     now,
     flashing,
     onRerun,
+    traceLink: run?.traceLink,
     openId,
     setOpenId,
   };

@@ -4,6 +4,7 @@ import { AppError, route } from '@/lib/action';
 import { chatToolSpecs } from '@/lib/actions/registry';
 import { auth } from '@/lib/auth';
 import { copilotSessionKey, copilotState, saveChatMessage } from '@/lib/chat';
+import { chatLimit } from '@/lib/rate-limit';
 
 type Frame =
   | { type: 'token'; text: string }
@@ -27,6 +28,9 @@ export const POST = route(
   chatTurnRequest,
   async (ctx, { message, confirm, context }): Promise<Response> => {
     if (!message && !confirm) throw new AppError('INVALID', 'Send a message or a confirmation');
+    // Per-workspace rate limit on the copilot (PR 18 hardening).
+    if (!chatLimit(ctx.workspaceId))
+      throw new AppError('RATE_LIMITED', 'Too many messages — slow down a moment');
 
     const orgs = await auth.api.listOrganizations({ headers: ctx.headers }).catch(() => []);
     const workspaceName = orgs.find((o) => o.id === ctx.workspaceId)?.name ?? 'your workspace';

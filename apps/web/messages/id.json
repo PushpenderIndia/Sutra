@@ -62,6 +62,7 @@
     "toolCalls": "Panggilan alat terbaru",
     "noToolCalls": "Belum ada panggilan alat",
     "viewOutput": "Lihat hasil",
+    "viewTrace": "Lihat trace",
     "openCheckpoint": "Buka checkpoint",
     "rerun": "Jalankan ulang dari sini",
     "rerunHint": "Menghitung ulang langkah ini dan semua langkah sesudahnya",

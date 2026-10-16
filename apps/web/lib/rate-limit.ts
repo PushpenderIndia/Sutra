@@ -23,3 +23,12 @@ export function rateLimiter(limit: number, windowMs = 60_000) {
 
 /** Shared by the open pixel and click redirect: 120 hits a minute per IP. */
 export const trackingLimit = rateLimiter(120);
+
+/**
+ * Per-workspace limiter for the chat copilot and Server Actions (PR 18 hardening). Generous enough for
+ * normal use, low enough to blunt a runaway client or a stolen session: 60 turns a minute per workspace.
+ */
+export const chatLimit = rateLimiter(60);
+
+/** Per-IP limiter for the unauthenticated auth endpoints (sign-in, callbacks): 30 a minute. */
+export const authLimit = rateLimiter(30);

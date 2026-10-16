@@ -26,6 +26,8 @@ export type RunState = {
   cursor: string;
   full: boolean;
   nodes: NodeState[];
+  /** Cloud Trace console link for this run's trace (PR 18); every node links to it from the popover. */
+  traceLink?: string;
 };
 
 export type GraphRole = 'root' | 'stage' | 'human' | 'child' | 'trigger' | 'placeholder';

@@ -1,6 +1,8 @@
 import 'server-only';
+import { env } from '@sutra/config';
 import { PipelineNodes, PipelineRuns } from '@sutra/db';
 import type { Id, PipelineNode, PipelineRun } from '@sutra/domain';
+import { traceLink } from '@sutra/obs';
 import { AppError } from '@/lib/action';
 import type { NodeState, RunState } from '@/lib/graph/model';
 
@@ -50,6 +52,7 @@ async function snapshot(workspaceId: Id, run: PipelineRun, after?: Date): Promis
     cursor: new Date(cursor).toISOString(),
     full: !after,
     nodes: nodes.map(toNodeState),
+    ...(run.traceId && { traceLink: traceLink(env.GCP_PROJECT_ID, run.traceId) }),
   };
 }
 

@@ -13,6 +13,7 @@ import type { Content } from '@google/genai';
 import { audit, LlmUsage } from '@sutra/db';
 import { MongoSessionService } from '@sutra/db/adk';
 import type { Id } from '@sutra/domain';
+import { log, metrics, tracer } from '@sutra/obs';
 import { z } from 'zod';
 import { RateLimiter } from './llm/rate-limit.ts';
 import { PipelineRecorder } from './pipeline/recorder.ts';
@@ -176,38 +177,57 @@ export async function runAgent<A extends LlmAgent, O extends z.ZodType | undefin
 
   const actor = { kind: 'agent', id: agent.name } as const;
   const target = { entity: 'adk_session', entityId: sessionId };
-  try {
-    let text = await turn(userMessage(opts.input), existing ? opts.state : undefined);
-    let output: unknown = text;
-    for (let attempt = 1; schema; attempt++) {
-      const parsed = parseOutput(schema, text);
-      if (parsed.success) {
-        output = parsed.data;
-        break;
+  const model = typeof agent.model === 'string' ? agent.model : (agent.model?.model ?? 'unknown');
+
+  // One span per agent run, joined to the trace of the enclosing pipeline node/job, so the agent run
+  // → its LLM calls → tool calls → any send all sit under one trace with the run's correlation ids.
+  return tracer().withSpan(`agent:${agent.name}`, async (span) => {
+    span.setAttributes({ 'agent.name': agent.name, 'llm.model': model });
+    try {
+      let text = await turn(userMessage(opts.input), existing ? opts.state : undefined);
+      let output: unknown = text;
+      for (let attempt = 1; schema; attempt++) {
+        const parsed = parseOutput(schema, text);
+        if (parsed.success) {
+          output = parsed.data;
+          break;
+        }
+        if (attempt === 2) {
+          await audit(workspaceId, actor, 'agent.output_invalid', {
+            ...target,
+            data: { issues: parsed.issues },
+          });
+          throw new AgentOutputError(agent.name, parsed.issues, text);
+        }
+        text = await turn(
+          userMessage(
+            `Your reply did not match the required output schema:\n${parsed.issues}\nReply again with only the corrected JSON.`,
+          ),
+        );
       }
-      if (attempt === 2) {
-        await audit(workspaceId, actor, 'agent.output_invalid', {
-          ...target,
-          data: { issues: parsed.issues },
-        });
-        throw new AgentOutputError(agent.name, parsed.issues, text);
-      }
-      text = await turn(
-        userMessage(
-          `Your reply did not match the required output schema:\n${parsed.issues}\nReply again with only the corrected JSON.`,
-        ),
-      );
-    }
-    await audit(workspaceId, actor, 'agent.run', { ...target, data: { ...usageOf(events) } });
-    return { output: output as never, text, events, usage: usageOf(events) };
-  } finally {
-    const usage = usageOf(events);
-    if (usage.tokensIn || usage.tokensOut)
-      await LlmUsage.create(workspaceId, {
-        agent: agent.name,
-        model: typeof agent.model === 'string' ? agent.model : (agent.model?.model ?? 'unknown'),
-        ...usage,
-        at: new Date(),
+      const usage = usageOf(events);
+      await audit(workspaceId, actor, 'agent.run', { ...target, data: { ...usage } });
+      span.setAttributes({
+        'llm.tokens_in': usage.tokensIn,
+        'llm.tokens_out': usage.tokensOut,
+        'llm.cost_usd': usage.costUsd,
       });
-  }
+      metrics().observe('llm.tokens', usage.tokensIn + usage.tokensOut, {
+        agent: agent.name,
+        model,
+      });
+      metrics().observe('llm.cost_usd', usage.costUsd, { agent: agent.name, model });
+      log().info('agent.run', { agent: agent.name, model, ...usage });
+      return { output: output as never, text, events, usage };
+    } finally {
+      const usage = usageOf(events);
+      if (usage.tokensIn || usage.tokensOut)
+        await LlmUsage.create(workspaceId, {
+          agent: agent.name,
+          model,
+          ...usage,
+          at: new Date(),
+        });
+    }
+  });
 }

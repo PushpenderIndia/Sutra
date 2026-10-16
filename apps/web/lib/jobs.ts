@@ -12,6 +12,7 @@ import {
 import { env } from '@sutra/config';
 import { Campaigns, Enrollments, Messages, retentionSweep } from '@sutra/db';
 import { deliver, onReply, renewWatches } from '@sutra/mail';
+import { log, tracer, withCorrelation } from '@sutra/obs';
 import { CloudTasksDispatcher } from './cloud-tasks';
 import { mainPipeline } from './pipeline';
 
@@ -25,7 +26,16 @@ type Deliver = { workspaceId: string; messageId: string };
 
 defineJob('deliver', async (payload: JobPayload) => {
   const { workspaceId, messageId } = payload as Deliver;
-  const result = await deliver(workspaceId, messageId);
+  // One trace per send job (agent-free, but it carries the compliance checks and the Gmail send), with
+  // correlation ids so the send's logs join the message it delivered.
+  const result = await withCorrelation({ workspaceId, messageId }, () =>
+    tracer().startTrace('job:deliver', { workspaceId }, async (span) => {
+      const r = await deliver(workspaceId, messageId);
+      span.setAttribute('deliver.status', r.status);
+      log().info('deliver', { messageId, status: r.status });
+      return r;
+    }),
+  );
   // A temporary block reschedules the send. Only the scheduling driver re-enqueues it; inline dev
   // relies on the `maintenance` sweep so a closed send window can't spin a tight retry loop.
   if (result.status === 'deferred' && env.JOBS_DRIVER === 'cloud-tasks')

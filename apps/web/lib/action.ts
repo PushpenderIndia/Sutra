@@ -11,6 +11,7 @@ export type ErrorCode =
   | 'FORBIDDEN'
   | 'INVALID'
   | 'NOT_FOUND'
+  | 'RATE_LIMITED'
   | 'ERROR';
 
 const STATUS: Record<ErrorCode, number> = {
@@ -19,6 +20,7 @@ const STATUS: Record<ErrorCode, number> = {
   FORBIDDEN: 403,
   INVALID: 400,
   NOT_FOUND: 404,
+  RATE_LIMITED: 429,
   ERROR: 500,
 };
 

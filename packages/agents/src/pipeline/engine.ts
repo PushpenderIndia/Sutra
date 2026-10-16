@@ -1,5 +1,6 @@
 import { newId, PipelineNodes, PipelineRuns } from '@sutra/db';
 import type { Id, PipelineNodeStatus, PipelineRunStatus } from '@sutra/domain';
+import { log, newTraceId, tracer, withCorrelation } from '@sutra/obs';
 import { defineJob, dispatch } from '../jobs.ts';
 import { getPipeline, type NodeContext, type Pipeline } from './define.ts';
 import { nodeScope } from './recorder.ts';
@@ -111,6 +112,23 @@ async function runNode(payload: Record<string, unknown>) {
     ...(item !== undefined && { item }),
   };
 
+  // Join the run's trace so every node span (and the agent/LLM spans beneath it) and every log line
+  // share the run's correlation ids and trace id (PR 18). The default tracer/logger are no-ops.
+  const run = await PipelineRuns.get(workspaceId, runId);
+  await withCorrelation({ workspaceId, runId, nodeId: docId, traceId: run?.traceId }, () =>
+    tracer().withSpan(`node:${docId}`, () => runNodeBody(p, def, job, ctx, key)),
+  );
+}
+
+async function runNodeBody(
+  p: Pipeline,
+  def: NonNullable<Pipeline['nodes'][string]>,
+  job: NodeJob,
+  ctx: NodeContext,
+  key: { workspaceId: Id; runId: Id; nodeId: string },
+) {
+  const { workspaceId, runId, item } = job;
+  const docId = key.nodeId;
   try {
     if (def.fanOut && item === undefined) {
       const items = [...new Set(await def.fanOut(ctx))];
@@ -136,6 +154,7 @@ async function runNode(payload: Record<string, unknown>) {
     }
   } catch (error) {
     await move(key, 'running', 'failed', { error: (error as Error).message });
+    log().error('node.failed', { node: docId, error: (error as Error).message });
     // Sub-agents that were mid-run when the node failed.
     await nodes().updateMany(
       { workspaceId, runId, parentId: docId, status: 'running' },
@@ -172,6 +191,7 @@ export async function runPipeline<K extends string>(p: Pipeline<K>, workspaceId:
     const run = await PipelineRuns.create(workspaceId, {
       status: 'running',
       from,
+      traceId: newTraceId(),
       startedAt: new Date(),
     });
     runId = run._id;
@@ -229,11 +249,15 @@ export async function runTrigger<K extends string>(
     { upsert: true },
   );
   try {
-    const result = await nodeScope.run(key, () => exec(ctx));
+    const result = await withCorrelation(
+      { workspaceId, runId: run._id, nodeId, traceId: run.traceId },
+      () => tracer().withSpan(`trigger:${nodeId}`, () => nodeScope.run(key, () => exec(ctx))),
+    );
     await move(key, 'running', 'done', result?.summary ? { summary: result.summary } : {});
     return result;
   } catch (error) {
     await move(key, 'running', 'failed', { error: (error as Error).message });
+    log().error('trigger.failed', { node: nodeId, error: (error as Error).message });
     throw error;
   }
 }

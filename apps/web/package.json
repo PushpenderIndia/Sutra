@@ -19,6 +19,7 @@
     "@sutra/db": "workspace:*",
     "@sutra/domain": "workspace:*",
     "@sutra/mail": "workspace:*",
+    "@sutra/obs": "workspace:*",
     "@tanstack/react-query": "5.104.3",
     "@tanstack/react-table": "9.3.1",
     "@xyflow/react": "12.12.0",

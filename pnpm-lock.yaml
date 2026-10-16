@@ -53,6 +53,9 @@ importers:
       '@sutra/mail':
         specifier: workspace:*
         version: link:../../packages/mail
+      '@sutra/obs':
+        specifier: workspace:*
+        version: link:../../packages/obs
       '@tanstack/react-query':
         specifier: 5.104.3
         version: 5.104.3(react@19.3.1)
@@ -171,6 +174,9 @@ importers:
       '@sutra/mail':
         specifier: workspace:*
         version: link:../mail
+      '@sutra/obs':
+        specifier: workspace:*
+        version: link:../obs
       '@sutra/sources':
         specifier: workspace:*
         version: link:../sources
@@ -272,6 +278,8 @@ importers:
       mongodb-memory-server:
         specifier: 11.3.0
         version: 11.3.0(socks@2.8.10)
+
+  packages/obs: {}
 
   packages/sources:
     dependencies:

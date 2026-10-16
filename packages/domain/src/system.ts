@@ -44,6 +44,8 @@ export const pipelineRun = doc({
   status: pipelineRunStatus,
   /** Node the run started (or was re-run) from. */
   from: z.string().optional(),
+  /** OpenTelemetry trace id (hex) tying every node span and log line of the run together (PR 18). */
+  traceId: z.string().optional(),
   startedAt: z.date(),
   endedAt: z.date().optional(),
 });
