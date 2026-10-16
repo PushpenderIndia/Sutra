@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./adk": "./src/adk-session-service.ts"
   },
   "scripts": {
     "migrate": "node --conditions=react-server scripts/migrate.ts",
@@ -12,6 +13,8 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@google/adk": "2.3.0",
+    "@google/genai": "2.30.0",
     "@sutra/compliance": "workspace:*",
     "@sutra/config": "workspace:*",
     "@sutra/domain": "workspace:*",

@@ -135,7 +135,18 @@ export const adkSession = doc({
 });
 export type AdkSession = z.infer<typeof adkSession>;
 
+/** ADK `app:` and `user:` scoped state, shared by every session of that app or user. */
+export const adkState = doc({
+  appName: z.string(),
+  scope: z.enum(['app', 'user']),
+  /** Set for `user` scope. */
+  userId: z.string().optional(),
+  state: z.record(z.string(), z.unknown()),
+});
+export type AdkState = z.infer<typeof adkState>;
+
 export const adkEvent = doc({
+  /** `_id` of the owning `adk_sessions` document. */
   sessionId: z.string(),
   invocationId: z.string(),
   author: z.string(),

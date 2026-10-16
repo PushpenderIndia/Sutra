@@ -68,5 +68,9 @@ export const indexes: Record<CollectionName, IndexDescription[]> = {
   llm_usage: [{ key: { workspaceId: 1, at: -1 } }],
   places_usage: [unique({ workspaceId: 1, month: 1 })],
   adk_sessions: [unique({ workspaceId: 1, appName: 1, userId: 1, sessionId: 1 })],
-  adk_events: [{ key: { workspaceId: 1, sessionId: 1, timestamp: 1 } }],
+  adk_events: [
+    { key: { workspaceId: 1, sessionId: 1, timestamp: 1 } },
+    unique({ workspaceId: 1, sessionId: 1, 'event.id': 1 }),
+  ],
+  adk_state: [unique({ workspaceId: 1, appName: 1, scope: 1, userId: 1 })],
 };

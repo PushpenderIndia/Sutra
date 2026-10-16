@@ -11,7 +11,7 @@ Requires Node 22 and pnpm 10.
 ```sh
 pnpm i
 pnpm secrets:pull            # or: cp .env.example .env.local
-docker compose -f infra/docker-compose.yml up -d   # local MongoDB (or point MONGODB_URI at Atlas)
+docker compose -f infra/docker-compose.yml up -d   # local MongoDB + LiteLLM proxy (needs GEMINI_API_KEY)
 pnpm db:migrate              # collections, validators, indexes
 pnpm db:seed --demo          # optional: demo workspace with a running campaign
 pnpm dev                     # http://localhost:3000
@@ -28,6 +28,7 @@ pnpm dev                     # http://localhost:3000
 | `pnpm test` | Vitest across every workspace (DB tests use an in-memory MongoDB); `pnpm test --coverage` enforces 100% on `packages/compliance` |
 | `pnpm db:migrate` | Create collections with Zod-generated `$jsonSchema` validators and indexes (idempotent) |
 | `pnpm db:seed --demo [--owner=you@example.com]` | Reset the demo workspace to a mid-campaign state; `--owner` (a user who has signed in once) makes you its owner |
+| `pnpm agent:try <agent> "<input>"` | Run one agent through the LiteLLM proxy in a Mongo session (`--session key` to resume) |
 | `pnpm secrets:pull` / `push` / `check` / `example` | Manage the `SUTRA_ENV` secret ([docs/secrets.md](docs/secrets.md)) |
 
 ## Auth and workspaces
@@ -43,10 +44,12 @@ apps/web            Next.js app (UI, API, webhooks, jobs, agents runtime)
 packages/config     env + secrets (the only reader of process.env)
 packages/domain     Zod schemas, enums, pure helpers
 packages/db         MongoDB client and repositories
-packages/agents     ADK agents, tools, prompts, pipeline
+packages/agents     ADK agents, LiteLLM adapter, runner, prompts, safety, pipeline engine
 packages/sources    lead sources
 packages/mail       Gmail send, threading, tracking
 packages/compliance policy engine + country rule packs (docs/compliance.md)
 ```
+
+Agents name model aliases (`sutra-fast`, `sutra-smart`) that [`infra/litellm/config.yaml`](infra/litellm/config.yaml) maps to providers, so changing a model is a YAML edit.
 
 Internal packages export TypeScript source directly (no build step); the app compiles them via `transpilePackages`. The build plan lives in [`todo/`](todo/README.md).

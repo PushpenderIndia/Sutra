@@ -1,0 +1,33 @@
+# LiteLLM proxy: the one gateway every agent uses. Agents call the aliases below, never a
+# provider model id, so switching providers is a change to this file only.
+# Runs stateless (no database_url): cost comes back per response in `x-litellm-response-cost`.
+model_list:
+  # Classification, scoring, short drafts.
+  - model_name: sutra-fast
+    litellm_params:
+      model: gemini/gemini-3.5-flash-lite
+      api_key: os.environ/GEMINI_API_KEY
+  # Personalisation, reply understanding.
+  - model_name: sutra-smart
+    litellm_params:
+      model: gemini/gemini-3.5-flash
+      api_key: os.environ/GEMINI_API_KEY
+  # Paid providers slot in with no code changes, e.g.:
+  # - model_name: sutra-smart
+  #   litellm_params:
+  #     model: vertex_ai/gemini-3.5-pro
+  #     vertex_project: os.environ/GCP_PROJECT_ID
+  #     vertex_location: us-central1
+
+router_settings:
+  num_retries: 3
+  retry_after: 5
+  # A 429 on one free model falls back to the other.
+  fallbacks:
+    - sutra-smart: [sutra-fast]
+
+litellm_settings:
+  drop_params: true
+
+general_settings:
+  master_key: os.environ/LITELLM_API_KEY

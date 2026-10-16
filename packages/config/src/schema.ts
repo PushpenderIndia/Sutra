@@ -49,11 +49,22 @@ export const serverSchema = z.object({
   ),
 
   LITELLM_BASE_URL: doc(z.url(), 'LiteLLM proxy base URL', 'http://localhost:4000'),
-  LITELLM_API_KEY: doc(z.string(), 'LiteLLM proxy master key', 'replace-me'),
+  LITELLM_API_KEY: doc(
+    z.string(),
+    'LiteLLM proxy master key; LiteLLM requires the "sk-" prefix',
+    'sk-replace-me',
+  ),
   GEMINI_API_KEY: doc(
     z.string(),
     'AI Studio key from a project WITHOUT billing (free tier only)',
     'replace-me',
+  ),
+  LLM_RPM_LIMITS: doc(
+    z
+      .string()
+      .regex(/^([\w.-]+=\d+)(,[\w.-]+=\d+)*$/, 'expected "alias=rpm[,alias=rpm]"')
+      .default('sutra-fast=15,sutra-smart=10'),
+    'Requests per minute per model alias, shared by every instance (free-tier caps)',
   ),
 
   GMAIL_PUBSUB_TOPIC: doc(z.string().optional(), 'Pub/Sub topic for Gmail push notifications'),

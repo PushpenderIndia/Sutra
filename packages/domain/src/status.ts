@@ -110,3 +110,19 @@ export const pipelineNodeStatus = z.enum([
   'skipped',
 ]);
 export type PipelineNodeStatus = z.infer<typeof pipelineNodeStatus>;
+export type PipelineRunStatus = z.infer<typeof pipelineRunStatus>;
+export const pipelineRunTransitions = {
+  running: ['waiting_human', 'done', 'failed'],
+  waiting_human: ['running'],
+  done: ['running'],
+  failed: ['running'],
+} as const satisfies TransitionTable<PipelineRunStatus>;
+/** Re-running from a node moves it and everything downstream back to `queued`. */
+export const pipelineNodeTransitions = {
+  queued: ['running', 'waiting_human', 'skipped'],
+  running: ['done', 'failed', 'queued'],
+  waiting_human: ['done', 'queued'],
+  done: ['queued'],
+  failed: ['queued'],
+  skipped: ['queued'],
+} as const satisfies TransitionTable<PipelineNodeStatus>;

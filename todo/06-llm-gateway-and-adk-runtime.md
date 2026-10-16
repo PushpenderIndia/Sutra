@@ -82,13 +82,13 @@ export const pipeline = definePipeline({
 - Re-running from any node (e.g. after the ICP is edited) invalidates its downstream nodes. That's how "edit the ICP → prospects refresh" works.
 
 ## Tasks
-- [ ] LiteLLM config + local `docker compose` for the proxy
-- [ ] `LiteLlm` adapter + registry + tests with a mocked proxy
-- [ ] `MongoSessionService` + contract tests
-- [ ] `defineAgent`, `runAgent`, prompt fragments, safety plugin
-- [ ] `pnpm agent:try <name> "<input>"` CLI for quick manual runs
-- [ ] `definePipeline` + `runPipeline` + human-node pause/resume + downstream invalidation
-- [ ] ADK plugin that records nodes, sub-agents and tool calls into `pipeline_nodes`
+- [x] LiteLLM config + local `docker compose` for the proxy
+- [x] `LiteLlm` adapter + registry + tests with a mocked proxy
+- [x] `MongoSessionService` + contract tests
+- [x] `defineAgent`, `runAgent`, prompt fragments, safety plugin
+- [x] `pnpm agent:try <name> "<input>"` CLI for quick manual runs
+- [x] `definePipeline` + `runPipeline` + human-node pause/resume + downstream invalidation
+- [x] ADK plugin that records nodes, sub-agents and tool calls into `pipeline_nodes`
 
 ## Acceptance criteria
 - A hello-world agent using `sutra-fast` runs through the proxy, and its session persists in Mongo

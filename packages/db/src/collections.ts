@@ -1,6 +1,7 @@
 import {
   adkEvent,
   adkSession,
+  adkState,
   auditEvent,
   businessProfileDoc,
   campaign,
@@ -46,6 +47,7 @@ export const LlmUsage = repository('llm_usage', llmUsage);
 export const PlacesUsage = repository('places_usage', placesUsage);
 export const AdkSessions = repository('adk_sessions', adkSession);
 export const AdkEvents = repository('adk_events', adkEvent);
+export const AdkState = repository('adk_state', adkState);
 
 /** Every collection Sutra owns (Better Auth manages its own). */
 export const repositories = [
@@ -71,6 +73,7 @@ export const repositories = [
   PlacesUsage,
   AdkSessions,
   AdkEvents,
+  AdkState,
 ] as const;
 
 export type CollectionName = (typeof repositories)[number]['name'];

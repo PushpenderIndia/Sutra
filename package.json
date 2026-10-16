@@ -15,6 +15,7 @@
     "test": "vitest run",
     "db:migrate": "pnpm --filter @sutra/db migrate",
     "db:seed": "pnpm --filter @sutra/db seed",
+    "agent:try": "pnpm --filter @sutra/agents try",
     "secrets:example": "pnpm --filter @sutra/config secrets example",
     "secrets:pull": "pnpm --filter @sutra/config secrets pull",
     "secrets:push": "pnpm --filter @sutra/config secrets push",

@@ -7,6 +7,16 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "try": "node --conditions=react-server scripts/try.ts",
     "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@google/adk": "2.3.0",
+    "@google/genai": "2.30.0",
+    "@sutra/config": "workspace:*",
+    "@sutra/db": "workspace:*",
+    "@sutra/domain": "workspace:*",
+    "zod": "4.6.7",
+    "server-only": "0.0.1"
   }
 }
