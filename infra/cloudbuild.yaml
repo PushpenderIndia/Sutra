@@ -1,0 +1,120 @@
+# Sutra deploy pipeline: test → build both images → push → deploy both Cloud Run services → migrate.
+# Submit with `pnpm deploy:prod` (or `gcloud builds submit --config infra/cloudbuild.yaml .`).
+# Images go to the Artifact Registry repo from infra/terraform (cleanup keeps only the latest).
+#
+# Substitutions let the one file serve any project/region without edits.
+substitutions:
+  _REGION: us-central1
+  _REPO: sutra
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+
+# The one secret, exposed to the migrate step as $$SUTRA_ENV (the whole dotenv file).
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/SUTRA_ENV/versions/latest
+      env: SUTRA_ENV
+
+steps:
+  # 1. Install, lint, typecheck, test, eval. Fail fast before building anything.
+  - id: test
+    name: node:22.20.0-bookworm-slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        corepack enable
+        pnpm install --frozen-lockfile
+        pnpm lint
+        pnpm typecheck
+        pnpm test
+        pnpm --filter @sutra/agents eval
+
+  # 2. Build the web image (Next.js standalone) from the repo root.
+  - id: build-web
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - infra/docker/web.Dockerfile
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:$SHORT_SHA
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:latest
+      - .
+    waitFor: ['test']
+
+  # 3. Build the LiteLLM proxy image (official image + our config.yaml).
+  - id: build-litellm
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - infra/docker/litellm.Dockerfile
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/litellm:$SHORT_SHA
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/litellm:latest
+      - .
+    waitFor: ['test']
+
+  # 4. Push both images.
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        docker push --all-tags ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web
+        docker push --all-tags ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/litellm
+    waitFor: ['build-web', 'build-litellm']
+
+  # 5. Deploy the LiteLLM proxy first (web points at its internal URL).
+  - id: deploy-litellm
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - sutra-litellm
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/litellm:$SHORT_SHA
+      - --region=${_REGION}
+      - --quiet
+    waitFor: ['push']
+
+  # 6. Deploy the web app.
+  - id: deploy-web
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - sutra-web
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:$SHORT_SHA
+      - --region=${_REGION}
+      - --quiet
+    waitFor: ['deploy-litellm']
+
+  # 7. Run idempotent DB migrations with the one secret materialised as .env.local.
+  - id: migrate
+    name: node:22.20.0-bookworm-slim
+    entrypoint: bash
+    secretEnv: ['SUTRA_ENV']
+    args:
+      - -c
+      - |
+        corepack enable
+        pnpm install --frozen-lockfile
+        printf '%s' "$$SUTRA_ENV" > .env.local
+        pnpm db:migrate
+    waitFor: ['deploy-web']
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:latest
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/litellm:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/litellm:latest
+
+timeout: 1800s

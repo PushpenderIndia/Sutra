@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { publicEnv } from '@sutra/config/next';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
@@ -32,6 +33,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Cloud Run runs the traced standalone server (infra/docker/web.Dockerfile). The tracing root is
+  // the monorepo root, two levels up, so workspace packages are bundled into .next/standalone.
+  output: 'standalone',
+  outputFileTracingRoot: join(import.meta.dirname, '..', '..'),
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },

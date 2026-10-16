@@ -20,3 +20,12 @@ next-env.d.ts
 *.pem
 *.log
 .vercel
+
+# terraform (state and locals; only *.example and *.tf are committed)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+crash.log

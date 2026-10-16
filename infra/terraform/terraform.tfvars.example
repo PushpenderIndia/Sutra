@@ -1,0 +1,29 @@
+# Copy to terraform.tfvars and fill in. Never commit the real file (see .gitignore).
+
+# GCP project that hosts Sutra. Create the Gemini API key in a SEPARATE project with
+# NO billing account, so it can never move off the free tier (todo/README.md section 5).
+project_id = "sutra-demo"
+
+# Cloud Run region — must be an always-free region (us-central1 | us-east1 | us-west1).
+region = "us-central1"
+
+# Public base URL of sutra-web. Unknown before the first apply: apply once with the default
+# hello image, read the `web_url` output, set it here, then apply again (and `pnpm deploy:prod`).
+app_url = "https://sutra-web-xxxxxxxxxx-uc.a.run.app"
+
+# Images are set by Cloud Build / `pnpm deploy:prod`; leave as the defaults for the first apply.
+# web_image     = "us-central1-docker.pkg.dev/sutra-demo/sutra/web:latest"
+# litellm_image = "us-central1-docker.pkg.dev/sutra-demo/sutra/litellm:latest"
+
+# Backstops against a runaway bill. The free tiers should keep real spend at $0.
+max_instances     = 2
+budget_amount_usd = 1
+
+# Optional budget alert. Leave billing_account empty to skip it.
+# billing_account     = "000000-AAAAAA-BBBBBB"
+# budget_alert_emails = ["you@example.com"]
+
+# MongoDB Atlas (M0) and the Gemini API key are provisioned out-of-band (both free, neither has a
+# Terraform-friendly free path): create the M0 cluster near us-central1 with IP allowlist + a strong
+# password, create the Gemini key in a no-billing project, then put MONGODB_URI and GEMINI_API_KEY
+# into .env.local and run `pnpm secrets:push`.

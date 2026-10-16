@@ -239,6 +239,12 @@ importers:
         specifier: 11.3.0
         version: 11.3.0(socks@2.8.10)
 
+  packages/deploy:
+    dependencies:
+      '@sutra/config':
+        specifier: workspace:*
+        version: link:../config
+
   packages/domain:
     dependencies:
       zod:

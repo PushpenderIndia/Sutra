@@ -15,6 +15,8 @@
     "test": "vitest run",
     "db:migrate": "pnpm --filter @sutra/db migrate",
     "db:seed": "pnpm --filter @sutra/db seed",
+    "deploy:prod": "pnpm secrets:check && pnpm build && pnpm --filter @sutra/deploy deploy",
+    "warmup": "pnpm --filter @sutra/deploy warmup",
     "agent:try": "pnpm --filter @sutra/agents try",
     "eval": "pnpm --filter @sutra/agents eval",
     "secrets:example": "pnpm --filter @sutra/config secrets example",
