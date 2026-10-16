@@ -144,7 +144,12 @@
     "nothingSelected": "कुछ नहीं चुना",
     "placeholder": "Sutra से कुछ भी पूछें…",
     "placeholderSoon": "कोपायलट जल्द आ रहा है",
-    "send": "भेजें"
+    "send": "भेजें",
+    "thinking": "सोच रहा हूँ…",
+    "confirmPrompt": "यह बदलाव करें?",
+    "confirm": "पुष्टि करें",
+    "cancel": "रद्द करें",
+    "errorGeneric": "कुछ गड़बड़ हो गई। कृपया फिर से प्रयास करें।"
   },
   "table": {
     "selectAll": "सभी पंक्तियाँ चुनें",

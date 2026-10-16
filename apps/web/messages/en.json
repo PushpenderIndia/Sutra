@@ -144,7 +144,12 @@
     "nothingSelected": "nothing selected",
     "placeholder": "Ask Sutra anything…",
     "placeholderSoon": "The copilot is coming soon",
-    "send": "Send"
+    "send": "Send",
+    "thinking": "Thinking…",
+    "confirmPrompt": "Run this change?",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "errorGeneric": "Something went wrong. Please try again."
   },
   "table": {
     "selectAll": "Select all rows",

@@ -5,7 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { Suspense } from 'react';
 import { QueryProvider } from '@/components/providers';
 import { AppShell } from '@/components/shell/app-shell';
-import { ChatPanel } from '@/components/shell/chat-panel';
+import { Copilot } from '@/components/shell/copilot';
 import { Header } from '@/components/shell/header';
 import { HtmlLang } from '@/components/shell/preferences';
 import { TabNav } from '@/components/shell/tab-nav';
@@ -43,7 +43,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
               canRerun={hasRole(role, 'admin')}
             />
           }
-          chat={<ChatPanel />}
+          chat={<Copilot />}
         >
           <TabNav />
           {children}

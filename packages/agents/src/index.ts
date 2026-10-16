@@ -11,6 +11,20 @@ export {
 export * from './agents/index.ts';
 export * from './campaign/index.ts';
 export {
+  type ChatToolSpec,
+  COPILOT_NAME,
+  type CopilotState,
+  type CopilotTurn,
+  chatTool,
+  chatTools,
+  confirmationReply,
+  copilotAgent,
+  type PendingConfirmation,
+  pendingConfirmation,
+  type RunCopilotOptions,
+  runCopilot,
+} from './chat/index.ts';
+export {
   type CopywriterDeps,
   copywriterDeps,
   setCopywriterDeps,

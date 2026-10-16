@@ -79,6 +79,18 @@ async function run<I extends z.ZodType, C, O>(
 }
 
 /**
+ * A Server Action that also carries its Zod input schema and minimum role, so a single definition
+ * can be both called from the UI and exposed to the chat copilot as a tool (PR 16) with the same
+ * parameters and the same auth guard.
+ */
+export type Action<I extends z.ZodType, O> = ((
+  data: z.input<I> | FormData,
+) => Promise<Result<O>>) & {
+  readonly input: I;
+  readonly role: Role | undefined;
+};
+
+/**
  * The only way to define a Server Action: session → active workspace → role → Zod-parsed input
  * → handler, with every failure returned as a `Result` instead of thrown. Every action is
  * workspace-scoped; `opts.role` is the minimum role (default `member`).
@@ -87,9 +99,10 @@ export function action<I extends z.ZodType, O>(
   input: I,
   handler: (ctx: Context, data: z.infer<I>) => Promise<O>,
   opts: { role?: Role } = {},
-) {
-  return async (data: z.input<I> | FormData): Promise<Result<O>> =>
+): Action<I, O> {
+  const fn = async (data: z.input<I> | FormData): Promise<Result<O>> =>
     run(await requestHeaders(), opts.role, input, data, handler);
+  return Object.assign(fn, { input, role: opts.role });
 }
 
 /** A Server Action for a signed-in user who may not have a workspace yet (onboarding). */

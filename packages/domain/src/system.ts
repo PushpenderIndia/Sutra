@@ -87,6 +87,22 @@ export const chatMessage = doc({
 });
 export type ChatMessage = z.infer<typeof chatMessage>;
 
+/** What the copilot sees of the screen each turn: the active tab, the selected rows, the campaign. */
+export const chatContext = z.object({
+  tab: tab.optional(),
+  selection: z.array(id).max(50).default([]),
+  campaignId: id.optional(),
+});
+export type ChatContext = z.infer<typeof chatContext>;
+
+/** A chat turn from the UI: either a user message, or a decision on a pending mutation. */
+export const chatTurnRequest = z.object({
+  message: z.string().min(1).max(4000).optional(),
+  confirm: z.object({ callId: z.string().min(1), confirmed: z.boolean() }).optional(),
+  context: chatContext.default({ selection: [] }),
+});
+export type ChatTurnRequest = z.infer<typeof chatTurnRequest>;
+
 export const credentialProvider = z.enum(['google', 'apollo', 'hunter']);
 
 /** A tenant secret, encrypted with `@sutra/config` `encrypt()`; plaintext is never stored. */

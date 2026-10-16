@@ -144,7 +144,12 @@
     "nothingSelected": "belum ada yang dipilih",
     "placeholder": "Tanyakan apa saja ke Sutra…",
     "placeholderSoon": "Kopilot segera hadir",
-    "send": "Kirim"
+    "send": "Kirim",
+    "thinking": "Berpikir…",
+    "confirmPrompt": "Jalankan perubahan ini?",
+    "confirm": "Konfirmasi",
+    "cancel": "Batal",
+    "errorGeneric": "Terjadi kesalahan. Silakan coba lagi."
   },
   "table": {
     "selectAll": "Pilih semua baris",
