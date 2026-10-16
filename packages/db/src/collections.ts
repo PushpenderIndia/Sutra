@@ -13,6 +13,7 @@ import {
   enrollment,
   icpDoc,
   llmUsage,
+  mailbox,
   meeting,
   message,
   pipelineNode,
@@ -45,6 +46,7 @@ export const Credentials = repository('credentials', credential);
 export const AuditEvents = repository('audit_events', auditEvent);
 export const LlmUsage = repository('llm_usage', llmUsage);
 export const PlacesUsage = repository('places_usage', placesUsage);
+export const Mailboxes = repository('mailboxes', mailbox);
 export const AdkSessions = repository('adk_sessions', adkSession);
 export const AdkEvents = repository('adk_events', adkEvent);
 export const AdkState = repository('adk_state', adkState);
@@ -74,6 +76,7 @@ export const repositories = [
   AdkSessions,
   AdkEvents,
   AdkState,
+  Mailboxes,
 ] as const;
 
 export type CollectionName = (typeof repositories)[number]['name'];

@@ -94,6 +94,17 @@ export const credential = doc({
 });
 export type Credential = z.infer<typeof credential>;
 
+/** The Gmail mailbox a workspace sends from (PR 11), with its push-sync cursor. */
+export const mailbox = doc({
+  /** Better Auth user whose Google credential sends; `fake` in `FAKE_MAIL` demo mode. */
+  userId,
+  email: z.email(),
+  /** Gmail history cursor: replies are read from here on. */
+  historyId: z.string().optional(),
+  watchExpiresAt: z.date().optional(),
+});
+export type Mailbox = z.infer<typeof mailbox>;
+
 export const actor = z.object({ kind: z.enum(['user', 'agent', 'system']), id: z.string() });
 export type Actor = z.infer<typeof actor>;
 

@@ -1,5 +1,6 @@
 import 'server-only';
 
+export { type ApprovedVariant, approvedVariant, variantHash } from './approval.ts';
 export { audit } from './audit.ts';
 export { closeDb, db, mongo } from './client.ts';
 export * from './collections.ts';

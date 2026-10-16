@@ -22,6 +22,8 @@ export const message = doc({
   idempotencyKey: z.string().min(1),
   scheduledAt: z.date().optional(),
   sentAt: z.date().optional(),
+  /** Set while a sender holds the claim on a queued message (so two workers can't both send it). */
+  sendingAt: z.date().optional(),
   error: z.string().optional(),
 });
 export type Message = z.infer<typeof message>;

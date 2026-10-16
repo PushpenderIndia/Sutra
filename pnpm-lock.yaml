@@ -38,6 +38,9 @@ importers:
       '@sutra/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@sutra/mail':
+        specifier: workspace:*
+        version: link:../../packages/mail
       better-auth:
         specifier: 1.7.10
         version: 1.7.10(@opentelemetry/api@1.9.1)(mongodb@7.7.0)(next@16.4.2(@opentelemetry/api@1.9.1)(@types/node@22.20.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@5.0.5)
@@ -152,7 +155,39 @@ importers:
         specifier: 4.6.7
         version: 4.6.7
 
-  packages/mail: {}
+  packages/mail:
+    dependencies:
+      '@sutra/compliance':
+        specifier: workspace:*
+        version: link:../compliance
+      '@sutra/config':
+        specifier: workspace:*
+        version: link:../config
+      '@sutra/db':
+        specifier: workspace:*
+        version: link:../db
+      '@sutra/domain':
+        specifier: workspace:*
+        version: link:../domain
+      marked:
+        specifier: 18.1.1
+        version: 18.1.1
+      mongodb:
+        specifier: 7.7.0
+        version: 7.7.0
+      nodemailer:
+        specifier: 10.1.2
+        version: 10.1.2
+      server-only:
+        specifier: 0.0.1
+        version: 0.0.1
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+    devDependencies:
+      mongodb-memory-server:
+        specifier: 11.3.0
+        version: 11.3.0
 
   packages/sources: {}
 
@@ -1890,6 +1925,11 @@ packages:
     resolution: {integrity: sha512-g3FeP20LNwhALb/6Cz6Dd4F2ngze0jz7tbzrD2wAV+o9FeNHe4rL+yK2md0J/fiSf1sa1ADhXqi5+oVwOM/eGw==}
     engines: {node: '>=8'}
 
+  marked@18.1.1:
+    resolution: {integrity: sha512-zEGgrtUG8crk+TrMacJSVABU4DYDDkS8uqgU3ohrn/2fW9C2AEfUrO3m6IhpIpQpl7YcVpiXXC9cSMWDANT3dg==}
+    engines: {node: '>= 20'}
+    hasBin: true
+
   memory-pager@1.5.0:
     resolution: {integrity: sha512-ZS4Bp4r/Zoeq6+NLJpP+0Zzm0pR8whtGPf1XExKLJBAczGMnSi3It14OiNCStjQjM6NU1okjQGSxgEZN8eBYKg==}
 
@@ -2019,6 +2059,10 @@ packages:
   node-fetch@3.3.2:
     resolution: {integrity: sha512-dRB78srN/l6gqWulah9SrxeYnxeddIG30+GOqK/9OlLVyLg3HPnr6SqOWTWOXKRwC2eGYCkZ59NNuSgvSrpgOA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+
+  nodemailer@10.1.2:
+    resolution: {integrity: sha512-rnQn9Rzh8RAwcp42MVsIvxbsv6YZ2a2/av+uyJ/LPU1+2QSlrRgFsWWZTKenyRUqkIl8urOI0c4+CEcmFdsvQw==}
+    engines: {node: '>=20.0.0'}
 
   obug@3.0.0:
     resolution: {integrity: sha512-5vvB5+W7ePv+p3uqxi+RcW1XAzLW0/hxt3/4X4Lc4qHudzOhmBiBwOY6DRob4WnanAEGvNcLjF+KNOufrUoEQw==}
@@ -3834,6 +3878,8 @@ snapshots:
     dependencies:
       semver: 6.3.1
 
+  marked@18.1.1: {}
+
   memory-pager@1.5.0: {}
 
   mkdirp-classic@0.5.3:
@@ -3952,6 +3998,8 @@ snapshots:
       data-uri-to-buffer: 4.0.1
       fetch-blob: 3.2.0
       formdata-polyfill: 4.0.10
+
+  nodemailer@10.1.2: {}
 
   obug@3.0.0: {}
 

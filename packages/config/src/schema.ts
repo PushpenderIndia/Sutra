@@ -67,7 +67,14 @@ export const serverSchema = z.object({
     'Requests per minute per model alias, shared by every instance (free-tier caps)',
   ),
 
-  GMAIL_PUBSUB_TOPIC: doc(z.string().optional(), 'Pub/Sub topic for Gmail push notifications'),
+  GMAIL_PUBSUB_TOPIC: doc(
+    z.string().optional(),
+    'Pub/Sub topic for Gmail push notifications ("gmail-push" or "projects/<id>/topics/<name>")',
+  ),
+  GMAIL_PUSH_SERVICE_ACCOUNT: doc(
+    z.string().optional(),
+    'Service account the Gmail Pub/Sub push subscription signs its OIDC tokens with',
+  ),
   TRACKING_SECRET: doc(
     z.string().min(32),
     'Signs open/click/unsubscribe tokens, at least 32 chars',

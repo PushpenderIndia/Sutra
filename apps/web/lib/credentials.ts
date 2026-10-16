@@ -1,7 +1,12 @@
 import 'server-only';
-import { decrypt, encrypt } from '@sutra/config';
+import { encrypt } from '@sutra/config';
 import { Credentials } from '@sutra/db';
 import type { Id } from '@sutra/domain';
+import { connectMailbox } from '@sutra/mail';
+
+export { googleRefreshToken } from '@sutra/mail';
+
+const GMAIL_SEND = 'https://www.googleapis.com/auth/gmail.send';
 
 type WithTokens = { refreshToken?: string | null; scope?: string | null };
 
@@ -9,7 +14,8 @@ type WithTokens = { refreshToken?: string | null; scope?: string | null };
  * Returns `account` without its refresh token, storing the token encrypted in `credentials`
  * for the user's active workspace. Without a signed-in user and active workspace (a first sign-in,
  * which only asks for basic scopes) the token isn't needed and is dropped. Better Auth's
- * `account` row therefore never holds a refresh token in plaintext.
+ * `account` row therefore never holds a refresh token in plaintext. A token with Gmail send
+ * access ("Connect mailbox") also makes that Gmail the workspace's sending mailbox.
  */
 export async function vaultRefreshToken<T extends WithTokens>(
   account: T,
@@ -18,18 +24,15 @@ export async function vaultRefreshToken<T extends WithTokens>(
 ): Promise<Omit<T, 'refreshToken'>> {
   const { refreshToken, ...rest } = account;
   if (refreshToken && userId && workspaceId) {
+    const scopes = account.scope?.split(/[ ,]/).filter(Boolean);
     await Credentials.upsertBy(workspaceId, 'userId', {
       provider: 'google',
       userId,
       ciphertext: encrypt(refreshToken),
-      scopes: account.scope?.split(/[ ,]/).filter(Boolean),
+      scopes,
     });
+    if (scopes?.includes(GMAIL_SEND))
+      await connectMailbox(workspaceId, userId).catch((e) => console.error('Connect mailbox', e));
   }
   return rest;
-}
-
-/** The user's Google refresh token for a workspace, if they connected their mailbox. */
-export async function googleRefreshToken(workspaceId: Id, userId: string) {
-  const credential = await Credentials.findOne(workspaceId, { provider: 'google', userId });
-  return credential && decrypt(credential.ciphertext);
 }

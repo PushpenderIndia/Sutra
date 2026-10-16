@@ -6,7 +6,12 @@ const cache = globalThis as typeof globalThis & { sutraMongo?: MongoClient };
 
 /** The shared client. It connects lazily on first use. Atlas M0 allows 500 connections. */
 export const mongo = () =>
-  (cache.sutraMongo ??= new MongoClient(env.MONGODB_URI, { appName: 'sutra', maxPoolSize: 10 }));
+  (cache.sutraMongo ??= new MongoClient(env.MONGODB_URI, {
+    appName: 'sutra',
+    maxPoolSize: 10,
+    // Optional fields left `undefined` are omitted, not stored as `null` (which validators reject).
+    ignoreUndefined: true,
+  }));
 
 export const db = () => mongo().db(env.MONGODB_DB);
 

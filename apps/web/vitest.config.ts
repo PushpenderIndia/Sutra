@@ -13,6 +13,8 @@ export default defineProject({
     globalSetup: ['../../packages/db/test/mongo.ts'],
     setupFiles: ['../../packages/db/test/setup.ts', './test/setup.ts'],
     hookTimeout: 60_000,
+    // One shared mongod serves every DB test file in parallel; give slow writes room under load.
+    testTimeout: 30_000,
   },
   resolve: {
     alias: {

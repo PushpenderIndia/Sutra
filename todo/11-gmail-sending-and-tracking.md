@@ -33,12 +33,12 @@ Send from the user's own mailbox, thread follow-ups properly, protect deliverabi
 - Click and open routes are public, rate-limited, and never reveal PII in the URL
 
 ## Tasks
-- [ ] Gmail client, MIME builder, threading, `deliver()`
-- [ ] Warm-up ramp + jittered scheduling + bounce handling
-- [ ] Watch / Pub/Sub / history sync (renewed by the `maintenance` cron)
-- [ ] Tracking routes, signed tokens, link rewriting, machine-open filter
-- [ ] Fake mail simulator
-- [ ] Deliverability checklist UI (SPF/DKIM/DMARC)
+- [x] Gmail client, MIME builder, threading, `deliver()`
+- [x] Warm-up ramp + jittered scheduling + bounce handling
+- [x] Watch / Pub/Sub / history sync (renewed by the `maintenance` cron)
+- [x] Tracking routes, signed tokens, link rewriting, machine-open filter
+- [x] Fake mail simulator
+- [x] Deliverability checklist UI (SPF/DKIM/DMARC)
 
 ## Acceptance criteria
 - Sending without approval or compliance tokens is a type error
@@ -46,3 +46,6 @@ Send from the user's own mailbox, thread follow-ups properly, protect deliverabi
 - A reply appears within 30s; a duplicate Pub/Sub delivery creates no duplicates
 - Day 1 of warm-up never sends more than `startPerDay` (tested)
 - A tampered tracking token returns 404 and records nothing
+
+> Notes: Gmail is called over plain `fetch` (no `googleapis`); access tokens are refreshed from the encrypted refresh token in `credentials`. `send(message, decision: AllowDecision, approval: ApprovedVariant)` — `ApprovedVariant` is branded in `@sutra/db` and only `approvedVariant(ws, campaignId, variantId)` issues one (campaign approved/running, variant approved/active, `approvedHash === variantHash(variant)`). `deliver(ws, messageId)` is the retry-safe path: spacing (2–9 min jitter via `nextSlot`) → `checkFor()` (warm-up ramp and caps live there) → approval → content guardrails → atomic claim (`sendingAt`) → `send()`; it returns `sent | deferred(retryAt) | blocked | failed | skipped` for the PR 13 job to act on. Follow-ups reuse the thread's `threadId`, `Re: <first subject>`, `In-Reply-To`/`References`. The List-Unsubscribe URL is PR 10's `/u/<token>/one-click` (RFC 8058 POST target) plus a `mailto:`. Tracking routes are `/t/o/<token>.gif` and `/t/c/<token>` (outside `/api`, excluded in the proxy, in-memory rate limit); the click token carries workspace, message and URL, and the variant is read from the message. Replies are `inbound` messages keyed `gmail:<mailbox>:<gmailId>`; subscribe with `onReply()`. Bounces suppress the address, stop the enrollment and pause the campaign above 5% once it has 20+ sends. The `maintenance` cron (PR 13) should call `renewWatches()`. New env key `GMAIL_PUSH_SERVICE_ACCOUNT`. Settings has a minimal "Connect mailbox" page; the mailbox is connected automatically when the vaulted token carries `gmail.send`. Real Gmail and Pub/Sub are untested here (no credentials); they're covered by mocked-endpoint tests.
+

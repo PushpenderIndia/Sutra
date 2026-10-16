@@ -8,5 +8,19 @@
   },
   "scripts": {
     "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@sutra/compliance": "workspace:*",
+    "@sutra/config": "workspace:*",
+    "@sutra/db": "workspace:*",
+    "@sutra/domain": "workspace:*",
+    "marked": "18.1.1",
+    "mongodb": "7.7.0",
+    "nodemailer": "10.1.2",
+    "server-only": "0.0.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "11.3.0"
   }
 }

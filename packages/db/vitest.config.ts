@@ -12,6 +12,8 @@ export default defineProject({
     globalSetup: ['./test/mongo.ts'],
     setupFiles: ['./test/setup.ts'],
     hookTimeout: 60_000,
+    // One shared mongod serves every DB test file in parallel; give slow writes room under load.
+    testTimeout: 30_000,
   },
   resolve: {
     alias: { 'server-only': fileURLToPath(new URL('./test/empty.ts', import.meta.url)) },

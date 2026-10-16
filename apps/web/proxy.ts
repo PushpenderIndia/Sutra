@@ -13,7 +13,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Everything except `/`, `/sign-in`, `/api/*` (guarded by route() or lib/verify), `/u/*` (signed
-  // unsubscribe links), Next internals and static files.
-  matcher: ['/((?!api/|_next/|sign-in|u/|.*\\.[a-z0-9]+$).+)'],
+  // Everything except `/`, `/sign-in`, `/api/*` (guarded by route() or lib/verify), `/u/*` and `/t/*` (signed
+  // unsubscribe and tracking links), Next internals and static files.
+  matcher: ['/((?!api/|_next/|sign-in|u/|t/|.*\\.[a-z0-9]+$).+)'],
 };

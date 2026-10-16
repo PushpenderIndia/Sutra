@@ -13,6 +13,7 @@
     "@sutra/config": "workspace:*",
     "@sutra/db": "workspace:*",
     "@sutra/domain": "workspace:*",
+    "@sutra/mail": "workspace:*",
     "better-auth": "1.7.10",
     "jose": "6.2.12",
     "mongodb": "7.7.0",

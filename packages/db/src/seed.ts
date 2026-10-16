@@ -1,5 +1,6 @@
 import type { CampaignStep, ContactStatus, Country, Id, Locale, ReplyIntent } from '@sutra/domain';
 import { ObjectId } from 'mongodb';
+import { variantHash } from './approval.ts';
 import { db } from './client.ts';
 import {
   AuditEvents,
@@ -253,6 +254,11 @@ export async function seedDemo({ now = new Date(), ownerEmail }: SeedOptions = {
     hypothesis,
     subject,
     body,
+    ...(status === 'active' && {
+      approvedHash: variantHash({ subject, body }),
+      approvedBy: 'demo-user',
+      approvedAt: at(8),
+    }),
     ...extra,
   });
   const intro = 'Hi {{firstName}},\n\n{{personalization}}\n\n';

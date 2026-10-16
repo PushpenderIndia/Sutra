@@ -73,4 +73,5 @@ export const indexes: Record<CollectionName, IndexDescription[]> = {
     unique({ workspaceId: 1, sessionId: 1, 'event.id': 1 }),
   ],
   adk_state: [unique({ workspaceId: 1, appName: 1, scope: 1, userId: 1 })],
+  mailboxes: [unique({ workspaceId: 1 }), unique({ email: 1 })],
 };
