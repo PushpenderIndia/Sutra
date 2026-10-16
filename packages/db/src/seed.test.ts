@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 import { describe, expect, it } from 'vitest';
 import { db } from './client.ts';
 import {
@@ -47,5 +48,19 @@ describe('seedDemo', () => {
 
     const { dataSize, indexSize } = await db().stats();
     expect(dataSize + indexSize).toBeLessThan(5 * 1024 * 1024);
+  });
+
+  it('links the demo workspace to a Better Auth organization and owner', async () => {
+    const _id = new ObjectId(ws);
+    expect(await db().collection('organization').findOne({ _id })).toMatchObject({
+      slug: 'pixelpress-demo',
+    });
+    await expect(seedDemo({ ownerEmail: 'nobody@example.com' })).rejects.toThrow(/sign in once/);
+
+    const user = await db().collection('user').insertOne({ email: 'mei@example.com' });
+    expect((await seedDemo({ ownerEmail: 'Mei@example.com' })).owner).toBe('Mei@example.com');
+    await seedDemo({ ownerEmail: 'mei@example.com' });
+    const members = await db().collection('member').find({ organizationId: _id }).toArray();
+    expect(members).toMatchObject([{ userId: user.insertedId, role: 'owner' }]);
   });
 });

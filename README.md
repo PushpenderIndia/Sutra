@@ -27,8 +27,14 @@ pnpm dev                     # http://localhost:3000
 | `pnpm typecheck` | TypeScript across every workspace |
 | `pnpm test` | Vitest across every workspace (DB tests use an in-memory MongoDB) |
 | `pnpm db:migrate` | Create collections with Zod-generated `$jsonSchema` validators and indexes (idempotent) |
-| `pnpm db:seed --demo` | Reset the demo workspace to a mid-campaign state |
+| `pnpm db:seed --demo [--owner=you@example.com]` | Reset the demo workspace to a mid-campaign state; `--owner` (a user who has signed in once) makes you its owner |
 | `pnpm secrets:pull` / `push` / `check` / `example` | Manage the `SUTRA_ENV` secret ([docs/secrets.md](docs/secrets.md)) |
+
+## Auth and workspaces
+
+Sign-in is Google only (Better Auth). A workspace is a Better Auth organization with roles `owner`, `admin` and `member`; onboarding asks one question, the company website, and creates the workspace. Every Server Action is defined with `action()` / `userAction()` and every route handler with `route()` from `apps/web/lib/action.ts` (session → active workspace → role → Zod input); a test fails on any that isn't. Webhooks and jobs verify signatures with `apps/web/lib/verify.ts` instead. Google refresh tokens are kept only in `credentials`, encrypted.
+
+For local sign-in, create an OAuth client (Web) in Google Cloud with redirect URI `http://localhost:3000/api/auth/callback/google` and put its ID and secret in `.env.local`.
 
 ## Layout
 

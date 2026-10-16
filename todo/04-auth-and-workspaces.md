@@ -35,12 +35,12 @@ export const createCampaign = action(campaignCreate, async ({ workspaceId }, dat
 - Webhooks (`/api/webhooks/*`) and jobs (`/api/jobs/*`) skip session auth but **must** verify signatures (Google OIDC for Pub/Sub and Cloud Tasks; HMAC tokens for tracking links). Shared verifier helpers live in `apps/web/lib/verify.ts`.
 
 ## Tasks
-- [ ] Better Auth server + client, Mongo adapter, Google provider
-- [ ] Organization plugin, active-org on the session, workspace switcher hook
-- [ ] `action()` / `route()` wrappers
-- [ ] `middleware.ts`
-- [ ] Sign-in page, then onboarding as **one input**: "What's your company website?" → creates the workspace (named from the domain) and starts the profiler pipeline (PR 07). Connecting Gmail is requested later, at checkpoint 2, just before sending.
-- [ ] Store Google refresh tokens in `credentials` via `encrypt()`
+- [x] Better Auth server + client, Mongo adapter, Google provider
+- [x] Organization plugin, active-org on the session, workspace switcher hook
+- [x] `action()` / `route()` wrappers
+- [x] `middleware.ts` (Next 16 renamed it: `apps/web/proxy.ts`)
+- [x] Sign-in page, then onboarding as **one input**: "What's your company website?" → creates the workspace (named from the domain) and starts the profiler pipeline (PR 07). Connecting Gmail is requested later, at checkpoint 2, just before sending.
+- [x] Store Google refresh tokens in `credentials` via `encrypt()`
 
 ## Acceptance criteria
 - Every Server Action and route goes through `action()` / `route()`. A grep test in CI fails if an exported action doesn't.

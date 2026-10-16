@@ -1,4 +1,5 @@
 import type { CampaignStep, ContactStatus, Country, Id, Locale, ReplyIntent } from '@sutra/domain';
+import { ObjectId } from 'mongodb';
 import { db } from './client.ts';
 import {
   AuditEvents,
@@ -73,10 +74,12 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
 /**
  * Resets the demo workspace to a realistic mid-campaign state: a confirmed profile and ICP,
  * scored prospects, a running A/B campaign with a week of sends, opens, clicks, replies and
- * meetings, and an optimizer challenger awaiting approval.
+ * meetings, and an optimizer challenger awaiting approval. The workspace is a Better Auth
+ * organization; pass `ownerEmail` (a user who has signed in once) to make them its owner.
  */
-export async function seedDemo(now = new Date()) {
+export async function seedDemo({ now = new Date(), ownerEmail }: SeedOptions = {}) {
   const ws: Id = DEMO_WORKSPACE_ID;
+  const owner = await linkDemoOrganization(now, ownerEmail);
   const random = rng(42);
   const at = (daysAgo: number) => new Date(now.getTime() - daysAgo * DAY);
   await Promise.all(
@@ -488,5 +491,39 @@ export async function seedDemo(now = new Date()) {
     at: at(8),
   });
 
-  return { workspaceId: ws, companies: companies.length, contacts: contacts.length, meetings };
+  return {
+    workspaceId: ws,
+    owner,
+    companies: companies.length,
+    contacts: contacts.length,
+    meetings,
+  };
+}
+
+export type SeedOptions = { now?: Date; ownerEmail?: string };
+
+/** Upserts the demo workspace's Better Auth `organization` (and owner `member`) rows. */
+async function linkDemoOrganization(now: Date, ownerEmail?: string) {
+  const organizationId = new ObjectId(DEMO_WORKSPACE_ID);
+  await db()
+    .collection('organization')
+    .updateOne(
+      { _id: organizationId },
+      {
+        $set: { name: 'PixelPress (demo)', slug: 'pixelpress-demo' },
+        $setOnInsert: { createdAt: now, metadata: JSON.stringify({ demo: true }) },
+      },
+      { upsert: true },
+    );
+  if (!ownerEmail) return undefined;
+  const user = await db().collection('user').findOne({ email: ownerEmail.toLowerCase() });
+  if (!user) throw new Error(`No user ${ownerEmail}: sign in once, then re-run the seed`);
+  await db()
+    .collection('member')
+    .updateOne(
+      { organizationId, userId: user._id },
+      { $set: { role: 'owner' }, $setOnInsert: { createdAt: now } },
+      { upsert: true },
+    );
+  return ownerEmail;
 }
