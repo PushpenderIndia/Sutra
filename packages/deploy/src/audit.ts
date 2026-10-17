@@ -24,6 +24,7 @@ export function auditInfra(infraDir: string): string[] {
   const cloudbuild = require_('cloudbuild.yaml');
   const webDocker = require_('docker/web.Dockerfile');
   const litellmDocker = require_('docker/litellm.Dockerfile');
+  const litellmConfig = require_('litellm/config.yaml');
 
   // Region: default is us-central1 and the variable only allows the three always-free regions.
   if (!new RegExp(`default\\s*=\\s*"${freeTier.defaultRegion}"`).test(tfVars))
@@ -38,9 +39,11 @@ export function auditInfra(infraDir: string): string[] {
   for (const service of freeTier.services)
     if (!tfMain.includes(`"${service}"`)) problems.push(`terraform: missing service ${service}`);
 
-  // LiteLLM is internal-only; the web service is public.
-  if (!tfMain.includes('INGRESS_TRAFFIC_INTERNAL_ONLY'))
-    problems.push('terraform: sutra-litellm must use INGRESS_TRAFFIC_INTERNAL_ONLY');
+  // LiteLLM has a public URL, so it must require its master key on every request.
+  if (!/^\s*master_key:\s*os\.environ\/LITELLM_API_KEY\s*$/m.test(litellmConfig))
+    problems.push(
+      'litellm/config.yaml: sutra-litellm must set master_key: os.environ/LITELLM_API_KEY',
+    );
 
   // Exactly one secret, mounted as a file.
   if (!new RegExp(`secret_id\\s*=\\s*"${freeTier.secretName}"`).test(tfMain))

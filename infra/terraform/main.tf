@@ -103,6 +103,15 @@ resource "google_secret_manager_secret_iam_member" "litellm_reads_secret" {
   member    = "serviceAccount:${google_service_account.litellm.email}"
 }
 
+# Cloud Build runs as the Compute Engine default SA; its migrate step reads SUTRA_ENV.
+data "google_project" "this" {}
+
+resource "google_secret_manager_secret_iam_member" "build_reads_secret" {
+  secret_id = google_secret_manager_secret.sutra_env.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.this.number}-compute@developer.gserviceaccount.com"
+}
+
 # The web runtime enqueues Cloud Tasks and acts as the OIDC token creator for the tasks it signs.
 resource "google_project_iam_member" "web_enqueues_tasks" {
   project = var.project_id
@@ -129,14 +138,15 @@ resource "google_project_iam_member" "web_telemetry" {
 }
 
 # ---------------------------------------------------------------------------
-# Cloud Run — sutra-web (public) and sutra-litellm (internal only).
+# Cloud Run — sutra-web (public) and sutra-litellm (public URL, master-key gated).
 # Both: min instances 0 (scale to zero), modest ceilings, the secret mounted as a file.
 # ---------------------------------------------------------------------------
 resource "google_cloud_run_v2_service" "litellm" {
   name     = "sutra-litellm"
   location = var.region
-  # Reachable only from inside the project (the web service), never the public internet.
-  ingress  = "INGRESS_TRAFFIC_INTERNAL_ONLY"
+  # Public URL, but every request needs the LiteLLM master key (LITELLM_API_KEY): sutra-web calls
+  # it over the internet with that key, since it has no VPC egress for an internal-only ingress.
+  ingress = "INGRESS_TRAFFIC_ALL"
 
   deletion_protection = false
   depends_on          = [google_secret_manager_secret_iam_member.litellm_reads_secret]
@@ -156,8 +166,9 @@ resource "google_cloud_run_v2_service" "litellm" {
       }
       resources {
         limits = {
-          cpu    = "1"
-          memory = "512Mi"
+          cpu = "1"
+          # LiteLLM peaks just over 512Mi at startup (OOM-killed there), so give it 1Gi.
+          memory = "1Gi"
         }
         cpu_idle = true
       }
@@ -177,6 +188,11 @@ resource "google_cloud_run_v2_service" "litellm" {
         }
       }
     }
+  }
+
+  # Cloud Build (`gcloud run deploy`) owns the image after the first apply; don't revert it.
+  lifecycle {
+    ignore_changes = [template[0].containers[0].image, client, client_version]
   }
 }
 
@@ -230,9 +246,14 @@ resource "google_cloud_run_v2_service" "web" {
       }
     }
   }
+
+  # Cloud Build (`gcloud run deploy`) owns the image after the first apply; don't revert it.
+  lifecycle {
+    ignore_changes = [template[0].containers[0].image, client, client_version]
+  }
 }
 
-# sutra-web is public (judges open the URL); sutra-litellm is reachable only by the web SA.
+# sutra-web is public (judges open the URL); sutra-litellm is public but gated by its master key.
 resource "google_cloud_run_v2_service_iam_member" "web_public" {
   name     = google_cloud_run_v2_service.web.name
   location = var.region
@@ -240,11 +261,12 @@ resource "google_cloud_run_v2_service_iam_member" "web_public" {
   member   = "allUsers"
 }
 
-resource "google_cloud_run_v2_service_iam_member" "litellm_private" {
+resource "google_cloud_run_v2_service_iam_member" "litellm_keyed" {
   name     = google_cloud_run_v2_service.litellm.name
   location = var.region
   role     = "roles/run.invoker"
-  member   = "serviceAccount:${google_service_account.web.email}"
+  # Cloud Run IAM lets anyone through; LiteLLM's master_key rejects requests without LITELLM_API_KEY.
+  member = "allUsers"
 }
 
 # The invoker SA may call the web service for scheduled jobs and Gmail push.
@@ -359,9 +381,10 @@ resource "google_billing_budget" "guard" {
   }
 
   amount {
+    # No currency_code: the budget must use the billing account's own currency (e.g. INR), so
+    # on a non-USD account this is that many units of the local currency — an even earlier alert.
     specified_amount {
-      currency_code = "USD"
-      units         = tostring(var.budget_amount_usd)
+      units = tostring(var.budget_amount_usd)
     }
   }
 

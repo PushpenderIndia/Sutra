@@ -9,4 +9,6 @@ COPY infra/litellm/config.yaml /app/config.yaml
 
 EXPOSE 4000
 # LiteLLM reads env from the process; Cloud Run's secret mount is a file, so load it first.
-CMD ["sh", "-c", "set -a; [ -f /secrets/.env ] && . /secrets/.env; set +a; litellm --config /app/config.yaml --port ${PORT:-4000}"]
+# ENTRYPOINT, not CMD: the base image's entrypoint is `litellm`, which would treat `sh` as a subcommand.
+ENTRYPOINT ["sh", "-c", "set -a; [ -f /secrets/.env ] && . /secrets/.env; set +a; litellm --config /app/config.yaml --port ${PORT:-4000}"]
+CMD []
