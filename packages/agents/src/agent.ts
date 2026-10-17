@@ -30,9 +30,15 @@ const SAFETY = [
   HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
 ].map((category) => ({ category, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE }));
 
-const PLACEHOLDER = /\{([A-Za-z_][\w:]*(?:\.[A-Za-z_]\w*)*)(\?)?\}/g;
+// A single-brace `{key}` reads state. A double-brace `{{mergeField}}` is a literal (email merge
+// fields like `{{firstName}}`), so the lookbehind/lookahead skip any `{` preceded by `{` or `}`
+// followed by `}`, leaving merge fields untouched.
+const PLACEHOLDER = /(?<!\{)\{([A-Za-z_][\w:]*(?:\.[A-Za-z_]\w*)*)(\?)?\}(?!\})/g;
 
-/** Fills `{key}` / `{a.b.c}` / `{key?}` from state; a missing required key is an error. */
+/**
+ * Fills `{key}` / `{a.b.c}` / `{key?}` from state; a missing required key is an error.
+ * Literal `{{...}}` merge fields are left as-is.
+ */
 export function renderTemplate(template: string, state: { get: (key: string) => unknown }) {
   return template.replace(PLACEHOLDER, (_, path: string, optional?: string) => {
     const [head = '', ...rest] = path.split('.');
