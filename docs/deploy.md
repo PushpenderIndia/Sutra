@@ -74,4 +74,4 @@ All runtime config is the single Secret Manager secret `SUTRA_ENV` (a whole dote
 
 ## Free-tier guardrails (enforced by test)
 
-`@sutra/deploy`'s `auditInfra()` reads the committed infra and fails `pnpm test` if any of these drift: region not `us-central1`, a Cloud Run service without `min_instance_count = 0`, the litellm service not internal-only, more than one Secret Manager secret or Cloud Scheduler job, Artifact Registry not pruned to one image, a missing Cloud Tasks queue / Pub/Sub topic / budget guard, or a web image that isn't Next.js standalone. Keep the infra and `packages/deploy/src/constraints.ts` in step.
+`@sutra/deploy`'s `auditInfra()` reads the committed infra and fails `pnpm test` if any of these drift: region not `us-central1`, a Cloud Run service without `min_instance_count = 0`, the litellm proxy without a `master_key`, more than one Secret Manager secret or Cloud Scheduler job, Artifact Registry not pruned to one image, a missing Cloud Tasks queue / Pub/Sub topic / budget guard, or a web image that isn't Next.js standalone. Keep the infra and `packages/deploy/src/constraints.ts` in step.

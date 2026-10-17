@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { env } from '@sutra/config';
 import { buildSubmitArgs } from '../src/index.ts';
 
@@ -8,9 +9,11 @@ import { buildSubmitArgs } from '../src/index.ts';
  * — one command, inside the free Cloud Build quota. The target project/region come from the one env.
  */
 const args = buildSubmitArgs({ project: env.GCP_PROJECT_ID, region: env.GCP_REGION });
+// pnpm runs this from packages/deploy; the config and source paths are relative to the repo root.
+const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 console.log(`+ gcloud ${args.join(' ')}`);
 try {
-  execFileSync('gcloud', args, { stdio: 'inherit' });
+  execFileSync('gcloud', args, { stdio: 'inherit', cwd: repoRoot });
 } catch (error) {
   console.error((error as Error).message);
   process.exit(1);

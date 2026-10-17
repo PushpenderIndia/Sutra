@@ -69,7 +69,7 @@ Outbound sales in APAC means ten languages, strict per-country rules and hours o
 
 | Service | Role in Sutra |
 |---|---|
-| **Cloud Run** (`us-central1`, min instances 0) | `sutra-web` (Next.js: UI, API, webhooks, jobs, tracking, ADK runner — public) and `sutra-litellm` (LiteLLM proxy — internal only) |
+| **Cloud Run** (`us-central1`, min instances 0) | `sutra-web` (Next.js: UI, API, webhooks, jobs, tracking, ADK runner — public) and `sutra-litellm` (LiteLLM proxy — gated by its master key) |
 | **Gemini API** (AI Studio, free tier) | Flash-Lite (`sutra-fast`) and Flash (`sutra-smart`) via LiteLLM; Google Search grounding for research |
 | **Secret Manager** | One secret, `SUTRA_ENV`, mounted as `/secrets/.env` in both services |
 | **Artifact Registry** | `web` and `litellm` images; cleanup policy keeps only the latest |

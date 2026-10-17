@@ -9,7 +9,6 @@ substitutions:
 
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: E2_HIGHCPU_8
 
 # The one secret, exposed to the migrate step as $$SUTRA_ENV (the whole dotenv file).
 availableSecrets:
@@ -35,12 +34,13 @@ steps:
   # 2. Build the web image (Next.js standalone) from the repo root.
   - id: build-web
     name: gcr.io/cloud-builders/docker
+    env: ['DOCKER_BUILDKIT=1']
     args:
       - build
       - -f
       - infra/docker/web.Dockerfile
       - -t
-      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:$SHORT_SHA
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:$BUILD_ID
       - -t
       - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:latest
       - .
@@ -49,12 +49,13 @@ steps:
   # 3. Build the LiteLLM proxy image (official image + our config.yaml).
   - id: build-litellm
     name: gcr.io/cloud-builders/docker
+    env: ['DOCKER_BUILDKIT=1']
     args:
       - build
       - -f
       - infra/docker/litellm.Dockerfile
       - -t
-      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/litellm:$SHORT_SHA
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/litellm:$BUILD_ID
       - -t
       - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/litellm:latest
       - .
@@ -79,7 +80,7 @@ steps:
       - run
       - deploy
       - sutra-litellm
-      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/litellm:$SHORT_SHA
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/litellm:$BUILD_ID
       - --region=${_REGION}
       - --quiet
     waitFor: ['push']
@@ -92,7 +93,7 @@ steps:
       - run
       - deploy
       - sutra-web
-      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:$SHORT_SHA
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:$BUILD_ID
       - --region=${_REGION}
       - --quiet
     waitFor: ['deploy-litellm']
@@ -112,9 +113,9 @@ steps:
     waitFor: ['deploy-web']
 
 images:
-  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:$BUILD_ID
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:latest
-  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/litellm:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/litellm:$BUILD_ID
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/litellm:latest
 
-timeout: 1800s
+timeout: 3600s

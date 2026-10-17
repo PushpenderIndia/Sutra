@@ -1,0 +1,10 @@
+# Image builds install their own dependencies; keep the build context to source only.
+**/node_modules
+**/.next
+**/.turbo
+.git
+.env*
+!.env.example
+infra/terraform/.terraform
+**/*.tfstate*
+**/*.tfvars
