@@ -130,7 +130,7 @@ export class GeminiCompanyResearcher implements CompanyResearcher {
 
   constructor(options: { apiKey?: string; model?: string } = {}) {
     this.client = new GoogleGenAI({ apiKey: options.apiKey ?? env.GEMINI_API_KEY });
-    this.model = options.model ?? 'gemini-2.5-flash';
+    this.model = options.model ?? 'gemini-flash-latest';
   }
 
   async research(input: CompanyResearchInput): Promise<CompanyResearch | undefined> {
