@@ -119,8 +119,11 @@ resource "google_project_iam_member" "web_enqueues_tasks" {
   member  = "serviceAccount:${google_service_account.web.email}"
 }
 
+# Each Cloud Task carries an OIDC token minted as JOBS_OIDC_SERVICE_ACCOUNT (the web SA, see
+# docs/deploy.md). Creating a task with that token requires the web runtime to actAs the web SA
+# itself, so this binding targets `web`, not `invoker` (the scheduler/pubsub signer).
 resource "google_service_account_iam_member" "web_signs_task_tokens" {
-  service_account_id = google_service_account.invoker.name
+  service_account_id = google_service_account.web.name
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${google_service_account.web.email}"
 }
@@ -319,8 +322,11 @@ resource "google_cloud_scheduler_job" "maintenance" {
       "Content-Type" = "application/json"
     }
     oidc_token {
-      service_account_email = google_service_account.invoker.email
-      audience              = var.app_url
+      # The job route verifies the signer against JOBS_OIDC_SERVICE_ACCOUNT (the web SA) and the
+      # audience against the full endpoint URL, so the cron must sign as web with the full-path
+      # audience — a bare origin or the invoker SA is rejected with 401.
+      service_account_email = google_service_account.web.email
+      audience              = "${var.app_url}/api/jobs/maintenance"
     }
   }
 
@@ -356,7 +362,8 @@ resource "google_pubsub_subscription" "gmail_push" {
     push_endpoint = "${var.app_url}/api/webhooks/gmail"
     oidc_token {
       service_account_email = google_service_account.invoker.email
-      audience              = var.app_url
+      # Must match the audience the webhook verifies (origin + path), not a bare origin.
+      audience = "${var.app_url}/api/webhooks/gmail"
     }
   }
 

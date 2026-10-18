@@ -11,16 +11,21 @@ installJobs();
  * returns 500 so Cloud Tasks retries with back-off.
  */
 export async function POST(request: Request, { params }: { params: Promise<{ name: string }> }) {
+  const { name } = await params;
   const serviceAccount = env.JOBS_OIDC_SERVICE_ACCOUNT;
   if (serviceAccount) {
     try {
-      await verifyGoogleOidc(request, { serviceAccount });
+      // Behind Cloud Run's proxy the request origin isn't the public URL, so the audience must be
+      // built from APP_URL (matching the token Cloud Tasks / Cloud Scheduler mint), not the request.
+      await verifyGoogleOidc(request, {
+        serviceAccount,
+        audience: `${env.APP_URL}/api/jobs/${name}`,
+      });
     } catch (error) {
       if (error instanceof VerificationError) return new Response('Unauthorized', { status: 401 });
       throw error;
     }
   }
-  const { name } = await params;
   const payload = await request.json().catch(() => ({}));
   await handleJob(name, payload);
   return new Response(null, { status: 204 });

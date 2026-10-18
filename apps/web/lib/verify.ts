@@ -17,7 +17,9 @@ const googleKeys = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2
 /**
  * Verifies the Google-signed OIDC token that Pub/Sub push and Cloud Tasks attach as
  * `Authorization: Bearer …`: signature, issuer, audience (default: the request URL without
- * its query) and the sending service account.
+ * its query) and the sending service account. Callers behind Cloud Run's proxy (the job route, the
+ * Gmail webhook) pass an explicit `audience` built from `APP_URL`, since the proxied request origin
+ * is not the public URL the token was minted for.
  */
 export async function verifyGoogleOidc(
   request: Request,
