@@ -8,10 +8,9 @@ const valid = parseEnv(envExample());
 
 describe('parse', () => {
   it('accepts a complete env and applies defaults and transforms', () => {
-    const env = parse(serverSchema, { ...valid, FAKE_MAIL: 'true', PLACES_MONTHLY_LIMIT: '50' });
+    const env = parse(serverSchema, { ...valid, PLACES_MONTHLY_LIMIT: '50' });
     expect(env.MONGODB_DB).toBe('sutra');
     expect(env.GCP_REGION).toBe('us-central1');
-    expect(env.FAKE_MAIL).toBe(true);
     expect(env.FEATURE_PAID_SOURCES).toBe(false);
     expect(env.PLACES_MONTHLY_LIMIT).toBe(50);
     expect(env.GMAIL_PUBSUB_TOPIC).toBeUndefined();

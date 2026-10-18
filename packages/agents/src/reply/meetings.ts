@@ -1,4 +1,4 @@
-import { audit, Contacts, Enrollments, Meetings, WorkspaceSettings } from '@sutra/db';
+import { audit, Contacts, Enrollments, isDemoMode, Meetings, WorkspaceSettings } from '@sutra/db';
 import {
   type Actor,
   canTransition,
@@ -38,17 +38,18 @@ export async function checkAvailability({
   now = new Date(),
   preferred,
   count = 3,
-  deps = replyDeps(),
+  deps,
 }: CheckAvailabilityInput): Promise<Interval[]> {
-  const [contact, settings, mailbox] = await Promise.all([
+  const [contact, settings, mailbox, resolved] = await Promise.all([
     Contacts.get(workspaceId, contactId),
     WorkspaceSettings.findOne(workspaceId, {}),
     mailboxFor(workspaceId),
+    deps ? Promise.resolve(deps) : isDemoMode(workspaceId).then(replyDeps),
   ]);
   if (!contact) return [];
   const timezone = contact.timezone ?? settings?.timezone ?? 'UTC';
   const businessHours = settings?.businessHours ?? DEFAULT_HOURS;
-  const calendar = deps.calendarFor(mailbox);
+  const calendar = resolved.calendarFor(mailbox);
 
   const timeMax = new Date(now.getTime() + LOOKAHEAD_DAYS * 86_400_000);
   const busy = await calendar.freeBusy(now, timeMax).catch(() => [] as Interval[]);
@@ -88,7 +89,7 @@ export async function bookMeeting({
   summary,
   description,
   actor = AGENT,
-  deps = replyDeps(),
+  deps,
 }: BookMeetingInput): Promise<Meeting | null> {
   const contact = await Contacts.get(workspaceId, contactId);
   if (!contact) return null;
@@ -96,12 +97,13 @@ export async function bookMeeting({
   const existing = await Meetings.findOne(workspaceId, { contactId });
   if (existing) return existing;
 
-  const [settings, mailbox] = await Promise.all([
+  const [settings, mailbox, resolved] = await Promise.all([
     WorkspaceSettings.findOne(workspaceId, {}),
     mailboxFor(workspaceId),
+    deps ? Promise.resolve(deps) : isDemoMode(workspaceId).then(replyDeps),
   ]);
   const timezone = contact.timezone ?? settings?.timezone ?? 'UTC';
-  const calendar = deps.calendarFor(mailbox);
+  const calendar = resolved.calendarFor(mailbox);
 
   const event = await calendar.insertEvent({
     summary:

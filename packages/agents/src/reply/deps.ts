@@ -21,12 +21,13 @@ export const setReplyDeps = (deps: Partial<ReplyDeps>) => {
   override = deps;
 };
 
-function defaults(): ReplyDeps {
-  const fake = env.NODE_ENV === 'test' || env.FAKE_MAIL;
+function defaults(demo: boolean): ReplyDeps {
+  const fake = env.NODE_ENV === 'test' || demo;
   return {
     analyzer: fake ? fakeReplyAnalyzer() : new LlmReplyAnalyzer(),
     calendarFor: realCalendarFor,
   };
 }
 
-export const replyDeps = (): ReplyDeps => ({ ...defaults(), ...override });
+/** Reply dependencies for a workspace. `demo` selects the heuristic analyser over the LLM. */
+export const replyDeps = (demo: boolean): ReplyDeps => ({ ...defaults(demo), ...override });

@@ -41,6 +41,8 @@ async function Shell({ children }: { children: React.ReactNode }) {
               run={run}
               topology={graphTopology()}
               canRerun={hasRole(role, 'admin')}
+              demoMode={settings?.demoMode ?? true}
+              canToggleDemo={hasRole(role, 'admin')}
             />
           }
           chat={<Copilot />}

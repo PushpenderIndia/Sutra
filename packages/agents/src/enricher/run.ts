@@ -1,4 +1,4 @@
-import { audit, Companies, Contacts, Icps, Suppressions } from '@sutra/db';
+import { audit, Companies, Contacts, Icps, isDemoMode, Suppressions } from '@sutra/db';
 import type { Company, Contact, Country, IcpDoc, Id } from '@sutra/domain';
 import type { NodeContext, NodeResult } from '../pipeline/define.ts';
 import { recordStep, reportProgress } from '../pipeline/recorder.ts';
@@ -75,8 +75,9 @@ export async function runEnricher(ctx: NodeContext): Promise<NodeResult> {
   const icp = await confirmedIcp(workspaceId);
   if (!icp) return { summary: 'No confirmed ICP' };
 
-  const deps: EnricherDeps = enricherDeps();
-  const pdeps = prospectorDeps();
+  const demo = await isDemoMode(workspaceId);
+  const deps: EnricherDeps = enricherDeps(demo);
+  const pdeps = prospectorDeps(demo);
   const fallbackCountry: Country = icp.firmographics.countries[0] ?? 'US';
 
   const suppressedDomains = new Set(

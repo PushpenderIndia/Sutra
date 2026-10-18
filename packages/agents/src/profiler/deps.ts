@@ -23,8 +23,8 @@ export const setProfilerDeps = (deps: Partial<ProfilerDeps>) => {
   override = deps;
 };
 
-function defaults(): ProfilerDeps {
-  const fake = env.NODE_ENV === 'test' || env.FAKE_MAIL;
+function defaults(demo: boolean): ProfilerDeps {
+  const fake = env.NODE_ENV === 'test' || demo;
   return {
     crawler: fake ? fakeCrawler(profilerFixtures) : new HttpCrawler(),
     researcher: fake ? fakeWebResearcher(fixtureResearch) : new GeminiWebResearcher(),
@@ -33,4 +33,5 @@ function defaults(): ProfilerDeps {
   };
 }
 
-export const profilerDeps = (): ProfilerDeps => ({ ...defaults(), ...override });
+/** Profiler dependencies for a workspace. `demo` selects fixture-backed fakes over real clients. */
+export const profilerDeps = (demo: boolean): ProfilerDeps => ({ ...defaults(demo), ...override });

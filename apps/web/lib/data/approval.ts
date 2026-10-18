@@ -1,7 +1,16 @@
 import 'server-only';
 import { firstSendsByTimezone, warmupRamp } from '@sutra/agents';
-import { Companies, Contacts, checkFor, Mailboxes, Messages, summarize } from '@sutra/db';
+import {
+  Companies,
+  Contacts,
+  checkFor,
+  isDemoMode,
+  Mailboxes,
+  Messages,
+  summarize,
+} from '@sutra/db';
 import type { Campaign, Country, Id, WorkspaceSettings as Settings } from '@sutra/domain';
+import { FAKE_USER } from '@sutra/mail';
 
 const DAY = 86_400_000;
 
@@ -80,6 +89,10 @@ export async function approvalView(
   return { ...base, compliance: { ready, blocked, text }, schedule, warmup };
 }
 
-/** Whether this workspace has connected a Gmail mailbox (the Checkpoint 2 "connect Gmail" prompt). */
+/**
+ * Whether this workspace can send (the Checkpoint 2 "connect Gmail" prompt). Demo mode always can
+ * (sending is simulated); live mode needs a connected Gmail mailbox, not the demo `fake` one.
+ */
 export const hasMailbox = async (workspaceId: Id): Promise<boolean> =>
-  !!(await Mailboxes.findOne(workspaceId, {}));
+  (await isDemoMode(workspaceId)) ||
+  !!(await Mailboxes.findOne(workspaceId, { userId: { $ne: FAKE_USER } }));

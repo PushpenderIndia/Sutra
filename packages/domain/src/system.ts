@@ -37,6 +37,12 @@ export const workspaceSettings = doc({
   enabledSources: z.array(source).default(['search', 'lookalike', 'places', 'registry', 'csv']),
   /** Per-country stricter-only overrides of compliance pack values (PR 10). */
   complianceOverrides: z.record(z.string(), z.record(z.string(), z.unknown())).default({}),
+  /**
+   * Demo mode: prospecting, enrichment, profiling and replies run against deterministic fixtures,
+   * and mail/calendar are simulated (nothing leaves Sutra). Defaults on so a new workspace never
+   * calls a paid API or sends a real email until an admin switches it to live.
+   */
+  demoMode: z.boolean().default(true),
 });
 export type WorkspaceSettings = z.infer<typeof workspaceSettings>;
 

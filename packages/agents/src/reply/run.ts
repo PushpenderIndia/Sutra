@@ -1,4 +1,13 @@
-import { audit, Contacts, Enrollments, Icps, Messages, optOut, Replies } from '@sutra/db';
+import {
+  audit,
+  Contacts,
+  Enrollments,
+  Icps,
+  isDemoMode,
+  Messages,
+  optOut,
+  Replies,
+} from '@sutra/db';
 import {
   type Actor,
   type Contact,
@@ -210,8 +219,9 @@ export interface AnalyzeReplyResult {
 export async function analyzeReply(
   workspaceId: Id,
   messageId: Id,
-  { now = new Date(), deps = replyDeps() }: { now?: Date; deps?: ReplyDeps } = {},
+  { now = new Date(), deps }: { now?: Date; deps?: ReplyDeps } = {},
 ): Promise<AnalyzeReplyResult | null> {
+  const resolvedDeps = deps ?? replyDeps(await isDemoMode(workspaceId));
   const inbound = await Messages.get(workspaceId, messageId);
   if (inbound?.direction !== 'inbound') return null;
   // Idempotency: one analysis per inbound message.
@@ -229,7 +239,7 @@ export async function analyzeReply(
   ]);
   const icpSummary = icp[0]?.rationale ?? icp[0]?.firmographics.industries.join(', ');
 
-  const analysis = await deps.analyzer.analyze({
+  const analysis = await resolvedDeps.analyzer.analyze({
     workspaceId,
     messageId,
     reply: inbound.body,
@@ -256,7 +266,7 @@ export async function analyzeReply(
 
   const actions = planReplyActions(analysis.intent);
   for (const action of actions)
-    await execute(action, { workspaceId, inbound, contact, analysis, now, deps });
+    await execute(action, { workspaceId, inbound, contact, analysis, now, deps: resolvedDeps });
 
   await audit(workspaceId, ANALYST, 'reply.analyzed', {
     entity: 'message',

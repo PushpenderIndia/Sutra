@@ -97,7 +97,6 @@ export const serverSchema = z.object({
   ),
 
   FEATURE_PAID_SOURCES: doc(bool.default(false), 'Allow workspaces to enable Apollo/Hunter'),
-  FAKE_MAIL: doc(bool.default(false), 'Demo mode: simulate sends, opens, clicks and replies'),
 });
 
 export const clientSchema = z.object({

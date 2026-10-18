@@ -13,7 +13,19 @@
     "language": "Language",
     "toggleChat": "Toggle copilot",
     "account": "Account",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "demo": "Demo",
+    "live": "Live",
+    "switchMode": "Switch mode",
+    "toLiveTitle": "Switch to live mode?",
+    "toLiveDesc": "Live mode runs real prospecting and sends real emails from your connected Gmail. Connect a mailbox in Settings first.",
+    "toDemoTitle": "Switch to demo mode?",
+    "toDemoDesc": "Demo mode simulates prospecting, enrichment and email — nothing leaves Sutra.",
+    "confirm": "Switch",
+    "cancel": "Cancel",
+    "onlyAdmins": "Only an admin can switch modes",
+    "nowLive": "Now in live mode",
+    "nowDemo": "Now in demo mode"
   },
   "workspace": {
     "switch": "Switch workspace",

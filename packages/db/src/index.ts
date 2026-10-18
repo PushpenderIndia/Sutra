@@ -30,6 +30,7 @@ export {
   unsubscribeTarget,
   unsubscribeToken,
 } from './compliance.ts';
+export { isDemoMode } from './demo.ts';
 export { InvalidTransitionError } from './errors.ts';
 export { indexes } from './indexes.ts';
 export { toMongoSchema } from './json-schema.ts';

@@ -1,7 +1,6 @@
-import { env } from '@sutra/config';
 import type { Mailbox } from '@sutra/domain';
 import { accessToken, GoogleApiError } from './gmail.ts';
-import { googleRefreshToken } from './mailbox.ts';
+import { FAKE_USER, googleRefreshToken } from './mailbox.ts';
 
 /**
  * A minimal Google Calendar REST client over `fetch` (no `googleapis`): the two calls Sutra needs
@@ -126,9 +125,9 @@ export function fakeCalendarClient(busy: Interval[] = []): CalendarClient {
   };
 }
 
-/** The calendar for a workspace mailbox: the simulator in `FAKE_MAIL` mode, Google otherwise. */
+/** The calendar for a workspace mailbox: the simulator for a demo (fake-user) mailbox, Google otherwise. */
 export function calendarFor(mailbox: Mailbox): CalendarClient {
-  if (env.FAKE_MAIL || mailbox.userId === 'fake') return fakeCalendarClient();
+  if (mailbox.userId === FAKE_USER) return fakeCalendarClient();
   return googleCalendarClient(async () => {
     const refreshToken = await googleRefreshToken(mailbox.workspaceId, mailbox.userId);
     if (!refreshToken) throw new GoogleApiError(401, 'Mailbox disconnected: connect it again');

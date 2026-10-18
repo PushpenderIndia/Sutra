@@ -13,7 +13,19 @@
     "language": "Bahasa",
     "toggleChat": "Tampilkan/sembunyikan kopilot",
     "account": "Akun",
-    "signOut": "Keluar"
+    "signOut": "Keluar",
+    "demo": "Demo",
+    "live": "Langsung",
+    "switchMode": "Ganti mode",
+    "toLiveTitle": "Beralih ke mode langsung?",
+    "toLiveDesc": "Mode langsung menjalankan prospek nyata dan mengirim email nyata dari Gmail yang terhubung. Hubungkan kotak surat di Pengaturan dulu.",
+    "toDemoTitle": "Beralih ke mode demo?",
+    "toDemoDesc": "Mode demo menyimulasikan prospek, pengayaan, dan email — tidak ada yang keluar dari Sutra.",
+    "confirm": "Ganti",
+    "cancel": "Batal",
+    "onlyAdmins": "Hanya admin yang dapat mengganti mode",
+    "nowLive": "Sekarang mode langsung",
+    "nowDemo": "Sekarang mode demo"
   },
   "workspace": {
     "switch": "Ganti ruang kerja",

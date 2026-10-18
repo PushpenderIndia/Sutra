@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { AgentGraphBar } from '@/components/shell/agent-graph-bar';
 import { CommandMenu } from '@/components/shell/command-menu';
+import { DemoModeToggle } from '@/components/shell/demo-mode-toggle';
 import { LocaleSwitcher, ThemeToggle } from '@/components/shell/preferences';
 import { type WorkspaceOption, WorkspaceSwitcher } from '@/components/shell/workspace-switcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -33,6 +34,8 @@ export function Header({
   run,
   topology,
   canRerun,
+  demoMode,
+  canToggleDemo,
 }: {
   user: HeaderUser;
   workspace: WorkspaceOption;
@@ -40,6 +43,8 @@ export function Header({
   run: RunState | null;
   topology: Topology;
   canRerun: boolean;
+  demoMode: boolean;
+  canToggleDemo: boolean;
 }) {
   const t = useTranslations('shell');
   const router = useRouter();
@@ -65,6 +70,7 @@ export function Header({
       <div className="flex min-w-0 flex-1 justify-center px-2">
         <AgentGraphBar run={run} topology={topology} canRerun={canRerun} />
       </div>
+      <DemoModeToggle demoMode={demoMode} canToggle={canToggleDemo} />
       <Button
         variant="outline"
         className="hidden gap-2 text-muted-foreground 2xl:flex"

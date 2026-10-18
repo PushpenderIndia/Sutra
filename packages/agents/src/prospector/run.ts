@@ -1,4 +1,4 @@
-import { BusinessProfiles, Contacts, Icps } from '@sutra/db';
+import { BusinessProfiles, Contacts, Icps, isDemoMode } from '@sutra/db';
 import type { BusinessProfileDoc, Country, IcpDoc, Id, Source } from '@sutra/domain';
 import {
   collectLeads,
@@ -54,7 +54,7 @@ export async function runProspectorSource(ctx: NodeContext): Promise<NodeResult>
   const { icp, profile } = await confirmedInputs(workspaceId);
   if (!icp || !profile) return { summary: 'No confirmed ICP' };
 
-  const deps = prospectorDeps();
+  const deps = prospectorDeps(await isDemoMode(workspaceId));
   const sctx: SourceContext = { ...(await buildSourceContext(workspaceId, deps)), icp };
   const fallbackCountry: Country = icp.firmographics.countries[0] ?? 'US';
 

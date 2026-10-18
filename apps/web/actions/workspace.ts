@@ -57,6 +57,28 @@ export const deleteWorkspace = action(
   { role: 'owner' },
 );
 
+/**
+ * Switches the workspace between demo mode (simulated prospecting, enrichment, replies and email —
+ * nothing leaves Sutra) and live mode (real APIs and real Gmail sending). Owners and admins only.
+ * Returns the new value so the UI can reflect it. Switching to live still requires connecting a
+ * Gmail mailbox in Settings before anything can send.
+ */
+export const setDemoMode = action(
+  workspaceSettings.pick({ demoMode: true }),
+  async ({ workspaceId, user }, { demoMode }) => {
+    const settings = await WorkspaceSettings.findOne(workspaceId, {});
+    if (!settings) throw new AppError('NOT_FOUND', 'Workspace settings not found');
+    const updated = await WorkspaceSettings.update(workspaceId, settings._id, { demoMode });
+    await audit(workspaceId, { kind: 'user', id: user.id }, 'settings.demo_mode.update', {
+      entity: 'workspace_settings',
+      entityId: settings._id,
+      data: { demoMode },
+    });
+    return updated?.demoMode ?? demoMode;
+  },
+  { role: 'admin' },
+);
+
 /** Per-country, stricter-only compliance overrides. Owners and admins only. */
 export const updateComplianceOverrides = action(
   workspaceSettings.pick({ complianceOverrides: true }),

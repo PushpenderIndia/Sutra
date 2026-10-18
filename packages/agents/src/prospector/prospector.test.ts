@@ -142,7 +142,7 @@ describe('multi-source prospecting', () => {
       ),
     });
     const deps = {
-      ...prospectorDeps(),
+      ...prospectorDeps(true),
       contactExtractor: extractor,
       emailVerifier: fakeEmailVerifier(['freshcrate.com']),
     };

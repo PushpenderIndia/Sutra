@@ -1,5 +1,5 @@
 import { decrypt, env } from '@sutra/config';
-import { audit, Credentials, Mailboxes, WorkspaceSettings } from '@sutra/db';
+import { audit, Credentials, isDemoMode, Mailboxes, WorkspaceSettings } from '@sutra/db';
 import type { Id, Mailbox } from '@sutra/domain';
 import { fakeClient } from './fake.ts';
 import { accessToken, gmailClient, type MailClient } from './gmail.ts';
@@ -16,9 +16,9 @@ export async function googleRefreshToken(workspaceId: Id, userId: string) {
   return credential && decrypt(credential.ciphertext);
 }
 
-/** The transport for a mailbox: the simulator in `FAKE_MAIL` mode, Gmail otherwise. */
+/** The transport for a mailbox: the simulator for a demo (fake-user) mailbox, Gmail otherwise. */
 export function clientFor(mailbox: Mailbox): MailClient {
-  if (env.FAKE_MAIL || mailbox.userId === FAKE_USER) return fakeClient(mailbox);
+  if (mailbox.userId === FAKE_USER) return fakeClient(mailbox);
   return gmailClient(async () => {
     const refreshToken = await googleRefreshToken(mailbox.workspaceId, mailbox.userId);
     if (!refreshToken) throw new MailboxError('Mailbox disconnected: connect it again');
@@ -48,7 +48,10 @@ export async function startWatch(mailbox: Mailbox, client = clientFor(mailbox)) 
 export async function renewWatches(now = new Date()) {
   const soon = new Date(now.getTime() + 2 * 86_400_000);
   const due = await Mailboxes.col()
-    .find({ $or: [{ watchExpiresAt: { $exists: false } }, { watchExpiresAt: { $lt: soon } }] })
+    .find({
+      userId: { $ne: FAKE_USER }, // demo mailboxes have no Gmail push to renew
+      $or: [{ watchExpiresAt: { $exists: false } }, { watchExpiresAt: { $lt: soon } }],
+    })
     .toArray();
   const results = await Promise.allSettled(due.map((m) => startWatch(m)));
   return results.filter((r) => r.status === 'fulfilled').length;
@@ -77,12 +80,24 @@ const slug = (s: string) =>
     .replace(/[^a-z0-9]+/g, '.')
     .replace(/^\.|\.$/g, '');
 
-/** The workspace's sending mailbox. In `FAKE_MAIL` mode one is created on first use. */
+/**
+ * The workspace's sending mailbox. In demo mode a synthetic `@mailbox.example` mailbox is created on
+ * first use (so the simulator can run with no Gmail connected); in live mode the connected Gmail is
+ * required. A real mailbox left over from a previous live session is ignored while in demo mode.
+ */
 export async function mailboxFor(workspaceId: Id): Promise<Mailbox> {
+  // One mailbox per workspace (unique index): it is the simulated one in demo mode, the connected
+  // Gmail in live mode.
   const mailbox = await Mailboxes.findOne(workspaceId, {});
-  if (mailbox) return mailbox;
-  if (!env.FAKE_MAIL) throw new MailboxError('No mailbox connected: connect Gmail in Settings');
-  const settings = await WorkspaceSettings.findOne(workspaceId, {});
-  const email = `${slug(settings?.senderName ?? '') || 'sender'}.${workspaceId.slice(-6)}@mailbox.example`;
-  return Mailboxes.upsertBy(workspaceId, 'email', { userId: FAKE_USER, email, historyId: '1' });
+  if (await isDemoMode(workspaceId)) {
+    if (mailbox?.userId === FAKE_USER) return mailbox;
+    // No mailbox, or a real one left from a live session: (re)create the simulated demo mailbox so
+    // demo mode never sends for real.
+    const settings = await WorkspaceSettings.findOne(workspaceId, {});
+    const email = `${slug(settings?.senderName ?? '') || 'sender'}.${workspaceId.slice(-6)}@mailbox.example`;
+    if (mailbox) await Mailboxes.remove(workspaceId, mailbox._id);
+    return Mailboxes.create(workspaceId, { userId: FAKE_USER, email, historyId: '1' });
+  }
+  if (mailbox && mailbox.userId !== FAKE_USER) return mailbox;
+  throw new MailboxError('No mailbox connected: connect Gmail in Settings');
 }

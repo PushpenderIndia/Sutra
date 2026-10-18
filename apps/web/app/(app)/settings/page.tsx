@@ -1,7 +1,6 @@
-import { env } from '@sutra/config';
-import { Mailboxes } from '@sutra/db';
+import { isDemoMode, Mailboxes } from '@sutra/db';
 import { hasRole } from '@sutra/domain';
-import { type CheckStatus, type DnsCheck, deliverability } from '@sutra/mail';
+import { type CheckStatus, type DnsCheck, deliverability, FAKE_USER } from '@sutra/mail';
 import { requireWorkspace } from '@/lib/workspace';
 import { ConnectMailbox } from './connect-mailbox';
 import { DeleteWorkspace } from './delete-workspace';
@@ -31,17 +30,22 @@ function Check({ name, check }: { name: string; check: DnsCheck }) {
 /** Mailbox connection and the SPF / DKIM / DMARC setup checklist for the sender's domain. */
 export default async function SettingsPage() {
   const { workspaceId, role } = await requireWorkspace();
-  const mailbox = await Mailboxes.findOne(workspaceId, {});
-  const dns = mailbox && !env.FAKE_MAIL ? await deliverability(mailbox.email) : null;
+  const demo = await isDemoMode(workspaceId);
+  // In live mode the sending address is the connected Gmail (never the demo `fake` mailbox).
+  const mailbox = demo
+    ? null
+    : await Mailboxes.findOne(workspaceId, { userId: { $ne: FAKE_USER } });
+  const dns = mailbox ? await deliverability(mailbox.email) : null;
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-8">
       <h1 className="text-2xl font-semibold">Settings</h1>
       <section className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-5 dark:border-neutral-800">
         <h2 className="font-semibold">Mailbox</h2>
-        {env.FAKE_MAIL ? (
+        {demo ? (
           <p className="text-sm text-neutral-500">
-            Demo mode: sends, opens, clicks and replies are simulated. Nothing leaves Sutra.
+            Demo mode: sends, opens, clicks and replies are simulated. Nothing leaves Sutra. Switch
+            to live mode from the top bar to send real email, then connect your Gmail here.
           </p>
         ) : mailbox ? (
           <>

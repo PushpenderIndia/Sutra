@@ -26,8 +26,8 @@ export const setEnricherDeps = (deps: Partial<EnricherDeps>) => {
   override = deps;
 };
 
-function defaults(): EnricherDeps {
-  const fake = env.NODE_ENV === 'test' || env.FAKE_MAIL;
+function defaults(demo: boolean): EnricherDeps {
+  const fake = env.NODE_ENV === 'test' || demo;
   return {
     researcher: fake ? fakeCompanyResearcher(enricherFixtures) : new GeminiCompanyResearcher(),
     scorer,
@@ -35,4 +35,5 @@ function defaults(): EnricherDeps {
   };
 }
 
-export const enricherDeps = (): EnricherDeps => ({ ...defaults(), ...override });
+/** Enricher dependencies for a workspace. `demo` selects fixture-backed fakes over real clients. */
+export const enricherDeps = (demo: boolean): EnricherDeps => ({ ...defaults(demo), ...override });

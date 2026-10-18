@@ -34,6 +34,7 @@ export {
 export {
   clientFor,
   connectMailbox,
+  FAKE_USER,
   googleRefreshToken,
   MailboxError,
   mailboxFor,

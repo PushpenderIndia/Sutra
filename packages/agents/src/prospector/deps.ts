@@ -58,8 +58,8 @@ const fakeClients = (): SourceClients => ({
   hunter: fakeHunterClient(hunterPool),
 });
 
-function defaults(): ProspectorDeps {
-  const fake = env.NODE_ENV === 'test' || env.FAKE_MAIL;
+function defaults(demo: boolean): ProspectorDeps {
+  const fake = env.NODE_ENV === 'test' || demo;
   return {
     clients: fake
       ? () => fakeClients()
@@ -76,7 +76,11 @@ function defaults(): ProspectorDeps {
   };
 }
 
-export const prospectorDeps = (): ProspectorDeps => ({ ...defaults(), ...override });
+/** Prospector dependencies for a workspace. `demo` selects fixture-backed fakes over real clients. */
+export const prospectorDeps = (demo: boolean): ProspectorDeps => ({
+  ...defaults(demo),
+  ...override,
+});
 
 /** A workspace's decrypted Apollo/Hunter keys (per-workspace secrets; absent when not configured). */
 export async function paidSourceKeys(
@@ -94,9 +98,10 @@ export async function paidSourceKeys(
 /** Builds the {@link SourceContext} for a workspace: flags, toggles, keys, clients and budget. */
 export async function buildSourceContext(
   workspaceId: Id,
-  deps = prospectorDeps(),
+  deps?: ProspectorDeps,
 ): Promise<SourceContext> {
   const settings = await WorkspaceSettings.findOne(workspaceId, {});
+  const resolved = deps ?? prospectorDeps(settings?.demoMode ?? true);
   const keys = env.FEATURE_PAID_SOURCES ? await paidSourceKeys(workspaceId) : {};
   return {
     workspaceId,
@@ -110,6 +115,6 @@ export async function buildSourceContext(
     ],
     keys,
     budget: { ...DEFAULT_BUDGET },
-    clients: deps.clients(workspaceId, keys),
+    clients: resolved.clients(workspaceId, keys),
   };
 }

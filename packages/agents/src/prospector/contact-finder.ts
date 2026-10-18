@@ -1,3 +1,4 @@
+import { isDemoMode } from '@sutra/db';
 import type { ContactDraft, CrawlResult, Id, Persona, Source } from '@sutra/domain';
 import { matchPersona, resolveEmail, roleEmail } from '@sutra/sources';
 import { untrusted } from '../prompts/base.ts';
@@ -38,7 +39,7 @@ export interface FindContactsInput {
  */
 export async function findContacts(input: FindContactsInput): Promise<ContactDraft[]> {
   const { workspaceId, company, personas, source } = input;
-  const deps = input.deps ?? prospectorDeps();
+  const deps = input.deps ?? prospectorDeps(await isDemoMode(workspaceId));
   const domain = company.domain;
   const website = company.website ?? `https://${domain}`;
 

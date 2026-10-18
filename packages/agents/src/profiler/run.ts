@@ -67,7 +67,7 @@ export async function runProfiler(ctx: NodeContext): Promise<NodeResult> {
   const settings = await WorkspaceSettings.findOne(workspaceId, {});
   const website = settings?.website;
   if (!website) throw new Error('No website configured for this workspace; cannot build a profile');
-  const deps = profilerDeps();
+  const deps = profilerDeps(settings?.demoMode ?? true);
 
   const crawl = await recordStep(
     'crawler',
