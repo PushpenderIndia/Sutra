@@ -41,6 +41,22 @@ export const createWorkspace = userAction(
   },
 );
 
+/**
+ * Permanently deletes the active workspace and everything in it. Owners only. The cascade that
+ * wipes every Sutra collection runs in Better Auth's `beforeDeleteOrganization` hook (see
+ * `lib/auth.ts`), so it happens however deletion is triggered; no audit event is written because
+ * the audit log is part of what is deleted. On success the session's active workspace is cleared,
+ * so we send the user to onboarding to create or pick another.
+ */
+export const deleteWorkspace = action(
+  z.object({}),
+  async ({ workspaceId, headers }) => {
+    await auth.api.deleteOrganization({ headers, body: { organizationId: workspaceId } });
+    redirect('/onboarding');
+  },
+  { role: 'owner' },
+);
+
 /** Per-country, stricter-only compliance overrides. Owners and admins only. */
 export const updateComplianceOverrides = action(
   workspaceSettings.pick({ complianceOverrides: true }),

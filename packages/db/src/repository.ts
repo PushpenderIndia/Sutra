@@ -116,6 +116,10 @@ export function repository<const N extends string, S extends DocSchema>(name: N,
 
     remove: async (workspaceId: Id, id: Id) =>
       (await raw().deleteOne(byId(workspaceId, id))).deletedCount === 1,
+
+    /** Deletes every document in this workspace; returns how many. For workspace teardown. */
+    purge: async (workspaceId: Id): Promise<number> =>
+      (await raw().deleteMany(scoped(workspaceId))).deletedCount,
   };
 }
 

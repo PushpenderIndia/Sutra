@@ -1,9 +1,10 @@
 import { env } from '@sutra/config';
 import { Mailboxes } from '@sutra/db';
+import { hasRole } from '@sutra/domain';
 import { type CheckStatus, type DnsCheck, deliverability } from '@sutra/mail';
-import { redirect } from 'next/navigation';
-import { getSession } from '@/lib/auth';
+import { requireWorkspace } from '@/lib/workspace';
 import { ConnectMailbox } from './connect-mailbox';
+import { DeleteWorkspace } from './delete-workspace';
 
 const BADGE: Record<CheckStatus, string> = {
   pass: 'bg-emerald-100 text-emerald-800',
@@ -29,9 +30,7 @@ function Check({ name, check }: { name: string; check: DnsCheck }) {
 
 /** Mailbox connection and the SPF / DKIM / DMARC setup checklist for the sender's domain. */
 export default async function SettingsPage() {
-  const session = await getSession();
-  const workspaceId = session?.session.activeOrganizationId;
-  if (!workspaceId) redirect('/onboarding');
+  const { workspaceId, role } = await requireWorkspace();
   const mailbox = await Mailboxes.findOne(workspaceId, {});
   const dns = mailbox && !env.FAKE_MAIL ? await deliverability(mailbox.email) : null;
 
@@ -76,6 +75,7 @@ export default async function SettingsPage() {
           </ul>
         </section>
       )}
+      {hasRole(role, 'owner') && <DeleteWorkspace />}
     </main>
   );
 }

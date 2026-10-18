@@ -1,6 +1,6 @@
 import 'server-only';
 import { env } from '@sutra/config';
-import { db } from '@sutra/db';
+import { db, purgeWorkspace } from '@sutra/db';
 import { type Account, betterAuth } from 'better-auth';
 import { mongodbAdapter } from 'better-auth/adapters/mongodb';
 import { getSessionFromCtx } from 'better-auth/api';
@@ -59,7 +59,20 @@ export const auth = betterAuth({
       },
     },
   },
-  plugins: [organization(), nextCookies()],
+  plugins: [
+    organization({
+      organizationHooks: {
+        // Deleting a workspace must delete everything in it. Only an owner reaches this (the
+        // plugin's default `organization:delete` permission). Better Auth removes its own org,
+        // member and invitation rows; we first purge every Sutra collection keyed by the
+        // workspace id, so no path can orphan tenant data.
+        beforeDeleteOrganization: async ({ organization }) => {
+          await purgeWorkspace(organization.id);
+        },
+      },
+    }),
+    nextCookies(),
+  ],
 });
 
 export type Session = typeof auth.$Infer.Session;
