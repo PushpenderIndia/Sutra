@@ -1,7 +1,7 @@
 # Sutra infrastructure — one root module. Everything here stays inside Google Cloud's
 # always-free tiers (see todo/README.md section 5): us-central1 only, Cloud Run min instances 0,
 # one Secret Manager secret, a single Cloud Scheduler job, Artifact Registry cleanup to one image,
-# and a $1 budget alert as a backstop.
+# and a $10 budget alert as a backstop.
 terraform {
   required_version = ">= 1.9.0"
 

@@ -17,7 +17,7 @@ app_url = "https://sutra-web-xxxxxxxxxx-uc.a.run.app"
 
 # Backstops against a runaway bill. The free tiers should keep real spend at $0.
 max_instances     = 2
-budget_amount_usd = 1
+budget_amount_usd = 10
 
 # Optional budget alert. Leave billing_account empty to skip it.
 # billing_account     = "000000-AAAAAA-BBBBBB"

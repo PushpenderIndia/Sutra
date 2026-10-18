@@ -115,4 +115,4 @@ The four-minute demo script and the 30-minutes-before checklist are in [`docs/de
 
 ## Runs at $0 on free tiers
 
-Every service sits on an always-free tier: Cloud Run in `us-central1` with min instances 0, one Secret Manager secret, one Cloud Scheduler job, Artifact Registry pruned to a single image, Gemini on a no-billing project, and MongoDB Atlas M0. A `$1` billing budget and a Places daily quota are backstops, not expected spend. The invariants are enforced by a test (`@sutra/deploy` `auditInfra`) that fails if the committed infra would leave the free tier.
+Every service sits on an always-free tier: Cloud Run in `us-central1` with min instances 0, one Secret Manager secret, one Cloud Scheduler job, Artifact Registry pruned to a single image, Gemini on a no-billing project, and MongoDB Atlas M0. A `$10` billing budget and a Places daily quota are backstops, not expected spend. The invariants are enforced by a test (`@sutra/deploy` `auditInfra`) that fails if the committed infra would leave the free tier.

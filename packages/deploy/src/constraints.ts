@@ -23,7 +23,7 @@ export const freeTier = {
   /** The Pub/Sub topic Gmail push publishes to. */
   pubsubTopic: 'gmail-push',
   /** The budget alert backstop, in USD. */
-  budgetUsd: 1,
+  budgetUsd: 10,
   /** The two Cloud Run services. */
   services: ['sutra-web', 'sutra-litellm'] as const,
 } as const;

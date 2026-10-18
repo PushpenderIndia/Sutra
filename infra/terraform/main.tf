@@ -374,7 +374,7 @@ resource "google_pubsub_subscription" "gmail_push" {
 }
 
 # ---------------------------------------------------------------------------
-# Billing budget — a $1 alert as a backstop. The free tiers should keep real
+# Billing budget — a $10 alert as a backstop. The free tiers should keep real
 # spend at $0; this fires long before anything costs money.
 # ---------------------------------------------------------------------------
 resource "google_billing_budget" "guard" {

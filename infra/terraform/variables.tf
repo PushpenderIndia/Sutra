@@ -46,7 +46,7 @@ variable "max_instances" {
 variable "budget_amount_usd" {
   type        = number
   description = "Monthly budget in USD. Alerts fire as spend approaches it; the free tier should keep spend at $0."
-  default     = 1
+  default     = 10
 
   validation {
     condition     = var.budget_amount_usd >= 1 && var.budget_amount_usd <= 10
