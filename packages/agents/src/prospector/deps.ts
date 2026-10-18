@@ -51,7 +51,9 @@ export const setProspectorDeps = (deps: Partial<ProspectorDeps>) => {
 };
 
 const fakeClients = (): SourceClients => ({
-  search: fakeCompanySearch(companyPool),
+  // `topUp` pads thin matches so a live demo always shows a healthy set of prospects; disabled under
+  // test so the prospector's strict dedupe/count assertions stay deterministic.
+  search: fakeCompanySearch(companyPool, { topUp: env.NODE_ENV !== 'test' }),
   places: fakePlacesClient(placePool),
   registry: fakeRegistryClient(registryPool),
   apollo: fakeApolloClient(apolloPool),

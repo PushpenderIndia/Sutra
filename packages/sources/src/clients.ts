@@ -112,8 +112,16 @@ export function hitKeywords(hit: CompanyHit): string[] {
  * country (if it has one) and shares at least one industry or name keyword — so an industry search
  * and a name-based "companies like X" lookalike can return the same company, which lets tests
  * exercise cross-source dedupe.
+ *
+ * With `topUp` (demo mode), the match is also padded: if strict matching returns fewer than `limit`,
+ * same-country companies then any remaining pool entries fill the gap, so a demo always shows a
+ * healthy set of prospects even when the ICP's wording doesn't overlap the pool exactly. The default
+ * (tests) keeps the strict behaviour, so dedupe/count assertions are unaffected.
  */
-export function fakeCompanySearch(pool: readonly CompanyHit[]): CompanySearch {
+export function fakeCompanySearch(
+  pool: readonly CompanyHit[],
+  { topUp = false }: { topUp?: boolean } = {},
+): CompanySearch {
   return {
     find: async (query, { limit }) => {
       const q = new Set(tokens(query));
@@ -124,10 +132,15 @@ export function fakeCompanySearch(pool: readonly CompanyHit[]): CompanySearch {
         );
         return countryOk && keywordOk;
       });
-      return matched
-        .slice()
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .slice(0, limit);
+      const ranked = matched.slice().sort((a, b) => a.name.localeCompare(b.name));
+      if (topUp && ranked.length < limit) {
+        const have = new Set(ranked.map((h) => h.domain ?? h.name));
+        const rest = pool.filter((h) => !have.has(h.domain ?? h.name));
+        const sameCountry = rest.filter((h) => h.country && q.has(h.country.toLowerCase()));
+        const others = rest.filter((h) => !(h.country && q.has(h.country.toLowerCase())));
+        ranked.push(...sameCountry, ...others);
+      }
+      return ranked.slice(0, limit);
     },
   };
 }

@@ -17,11 +17,15 @@ export type ScriptedEvent =
   | { after: number; kind: 'click'; url: string; userAgent: string; ip: string }
   | { after: number; kind: 'reply' | 'bounce'; text: string };
 
+// A spread of intents so the Leads board fills with a realistic mix — interested, meeting request,
+// evaluating, not now, already served, and unsubscribe. Kept industry-neutral so they read well for
+// any ICP (SaaS, fintech, F&B, a developer job board, …).
 const REPLIES = [
-  'Thanks for reaching out. Could you share pricing for about 2,000 units a month?',
-  'Interesting. Can we talk next Tuesday afternoon?',
-  'Not right now, maybe next quarter.',
-  'We already have a supplier, thanks.',
+  'Thanks for reaching out — this looks relevant. Could you share pricing and a bit more detail?',
+  'Interesting. Can we set up a quick call next Tuesday afternoon?',
+  'We’re evaluating options this quarter — happy to see a short demo.',
+  'Not a priority for us right now, maybe revisit next quarter.',
+  'We already work with a vendor for this, but thanks.',
   'Please remove me from your list.',
 ];
 const HUMAN =
@@ -49,7 +53,8 @@ export function script(message: Pick<Message, '_id' | 'to' | 'body'>): ScriptedE
   const [url] = linksIn(message.body);
   if (url && roll() < 0.25)
     events.push({ after: (30 + roll() * 60) * SECOND, kind: 'click', url, userAgent: HUMAN, ip });
-  if (roll() < 0.25) {
+  // Roughly half of recipients reply in demo mode, so the Leads board populates quickly with a mix.
+  if (roll() < 0.5) {
     const text = REPLIES[Math.floor(roll() * REPLIES.length)] as string;
     events.push({ after: (45 + roll() * 75) * SECOND, kind: 'reply', text });
   }
