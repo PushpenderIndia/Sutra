@@ -1,6 +1,6 @@
 'use client';
 import type { Topology } from '@sutra/agents/topology';
-import { LogOut, PanelRight, Search } from 'lucide-react';
+import { LogOut, PanelRight, Search, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -67,6 +67,11 @@ export function Header({
       </Link>
       <span aria-hidden className="hidden h-5 w-px bg-border sm:block" />
       <WorkspaceSwitcher active={workspace} workspaces={workspaces} />
+      <Button variant="ghost" size="icon" className="shrink-0" aria-label={t('settings')} asChild>
+        <Link href="/settings">
+          <Settings aria-hidden />
+        </Link>
+      </Button>
       <div className="flex min-w-0 flex-1 justify-center px-2">
         <AgentGraphBar run={run} topology={topology} canRerun={canRerun} />
       </div>
